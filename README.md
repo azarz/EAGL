@@ -1,6 +1,6 @@
 # EAGL
 
-Extérieur d'Agglomération en openGL
+Emulsion Artistique en openGL
 
 or
 

@@ -38,7 +38,7 @@ add_definitions(
 
 # Tutorial 1
 add_executable(main 
-	main.cpp
+	eagl.cpp
 	src/Shader.cpp
 	shaders/default.vertexshader
 	shaders/default.fragmentshader

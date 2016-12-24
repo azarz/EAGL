@@ -48,7 +48,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
     
     Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
-    /*
+
     GLuint texture; // Declaration de l'identifiant
 
 	glGenTextures(1, &texture); // Generation de la texture
@@ -63,7 +63,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Chargement du fichier image en utilisant la lib SOIL
 	int twidth, theight;
-	unsigned char* data = SOIL_load_image("texture/texture.png", &twidth, &theight, 
+    unsigned char* data = SOIL_load_image("texture/wall.jpg", &twidth, &theight,
 					                            0, SOIL_LOAD_RGB);
 	// Association des donnees image a la texture
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, twidth, theight, 
@@ -74,18 +74,18 @@ int main()
 	SOIL_free_image_data(data);
 	// On unbind la texture
 	glBindTexture(GL_TEXTURE_2D, 0);
-	*/
+
 	
 	GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
-       0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // Top Right
-       0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // Bottom Right
-      -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // Bottom Left
-      -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // Top Left 
+        -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 500.0f, // Top Left
+        -50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
+         50.0f, -0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   500.0f, 500.0f, // Top Right
+         50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   500.0f, 0.0f  // Bottom Right
     };
     
     GLshort indices[]{
-    	0, 1, 3,
+        0, 1, 2,
     	1, 2, 3
     };    
     
@@ -139,12 +139,12 @@ int main()
         glm::mat4 model;
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));	
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-		/*
+
 		//  Activiation  de la  texture 0
 		glActiveTexture(GL_TEXTURE0 );//  Binding  de  notre  texture
 		glBindTexture(GL_TEXTURE_2D , texture );//  Association  du  numero  de la  texture  pour le  shader
 		glUniform1i(glGetUniformLocation(shader.Program , "maTexture"), 0);
-		*/
+
 		glBindVertexArray(VAO);
 		
         // On dessine l'objet courant 

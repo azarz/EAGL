@@ -35,6 +35,7 @@ GLfloat lastY = 300;
 GLfloat xoffset;
 GLfloat yoffset;
 bool firstMouse = true;
+bool mouse_on = false;
 
 
 // An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
@@ -122,7 +123,6 @@ public:
     // Moves/alters the camera positions based on user input
     void Do_Movement()
     {
-
         GLfloat currentFrame = glfwGetTime();
         this->deltaTime = currentFrame - this->lastFrame;
         this->lastFrame = currentFrame;
@@ -137,7 +137,11 @@ public:
         if(keys[68] || keys [262])
             this->ProcessKeyboard(RIGHT, this->deltaTime);
 
-        this->ProcessMouseMovement(xoffset, yoffset);
+	if(mouse_on)
+	{
+	        this->ProcessMouseMovement(xoffset, yoffset);
+		mouse_on = false;
+	}
     }
 
 
@@ -190,6 +194,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     
     lastX = xpos;
     lastY = ypos;
+
+    mouse_on=true;	
     
     //this->ProcessMouseMovement(xoffset, yoffset);
 }

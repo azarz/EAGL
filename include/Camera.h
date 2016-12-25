@@ -23,6 +23,11 @@ enum Camera_Movement {
     RIGHT
 };
 
+enum Camera_Type {
+    GROUND,
+    SKY
+};
+
 // Default camera values
 const GLfloat YAW        = -90.0f;
 const GLfloat PITCH      =  0.0f;
@@ -58,12 +63,11 @@ public:
     GLfloat deltaTime;
     GLfloat lastFrame;
 
-
     //Mod
-    
+    Camera_Type type;
 
     // Constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),  GLFWwindow* window = nullptr, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : 
+    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),  GLFWwindow* window = nullptr, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH, Camera_Type type = GROUND) :
     Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), deltaTime(0.0f), lastFrame(0.0f)
     {
         this->Position = position;
@@ -142,6 +146,10 @@ public:
 	        this->ProcessMouseMovement(xoffset, yoffset);
 		mouse_on = false;
 	}
+
+        if(this->type == GROUND){
+                this->Position.y = 0.5f;
+        }
     }
 
 

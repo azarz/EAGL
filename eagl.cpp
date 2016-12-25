@@ -78,10 +78,10 @@ int main()
 	
 	GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
-        -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 250.0f, // Top Left
+        -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 125.0f, // Top Left
         -50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
-         50.0f, -0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   250.0f, 250.0f, // Top Right
-         50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   250.0f, 0.0f  // Bottom Right
+         50.0f, -0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   125.0f, 125.0f, // Top Right
+         50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   125.0f, 0.0f  // Bottom Right
     };
     
     GLshort indices[]{
@@ -144,8 +144,6 @@ int main()
         glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         
         glm::mat4 model;
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));	
@@ -157,8 +155,21 @@ int main()
 		glUniform1i(glGetUniformLocation(shader.Program , "maTexture"), 0);
 
 		glBindVertexArray(VAO);
+
+        // Position et couleur de la lumiere
+        GLint lightPos = glGetUniformLocation(shader.Program, "lightPos");
+        GLint lightColor = glGetUniformLocation(shader.Program, "lightColor");
+        glm::vec3 lPos(0.0f, 150.0f, 0.0f);
+        glm::vec3 lColor(1.0f, 1.0f, 1.0f);
+        glUniform3f(lightPos, lPos.x, lPos.y, lPos.z);
+        glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
 		
-        // On dessine l'objet courant
+        // On met a jour les variables globales du shader
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        // On dessine l'objet courant (ici, le sol)
         glDrawElements(GL_TRIANGLES, 3*2, GL_UNSIGNED_SHORT, 0);
 
         // Dessin des objets :

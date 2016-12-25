@@ -179,11 +179,11 @@ public:
     void Switch_Mode(){
         if(keys[32]){
             if(this->type == GROUND){
-                //Pour passer dans les airs, on change l'altitude, et on fixe l'orientation à -70° pour faire joli,
+                //Pour passer dans les airs, on change l'altitude, et on fixe l'orientation à -89.9° pour regarder droit dessous,
                 //de plus le vecteur 'Up' change forcément. On augmente la vitesse pour plus d'ergonomie.
                 this->type  =  SKY;
                 this->Position.y = 25.0f;
-                this->Pitch = -70.0f;
+                this->Pitch = -89.9f;
                 this->Yaw   =  YAW;
                 this->updateCameraVectors();
                 this->Up    =  glm::vec3(0.0f, 0.0f, -1.0f);

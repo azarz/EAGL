@@ -21,7 +21,7 @@
 #include <SOIL/SOIL.h>
 
 // Properties
-GLuint screenWidth = 800, screenHeight = 600;
+GLuint screenWidth = 960, screenHeight = 720;
 
 int main()
 {
@@ -119,7 +119,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 	
-    Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), window);
+    Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
     
     // Game loop
     while(!glfwWindowShouldClose(window))
@@ -127,7 +127,7 @@ int main()
         glfwPollEvents();
         camera.Do_Movement();
         
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.0f, 0.08f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.Use();

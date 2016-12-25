@@ -133,7 +133,6 @@ int main()
         //Fonction permettant de changer de mode de caméra, appelée si la barre espace est enfoncée
         camera.Switch_Mode();
         
-        glClearColor(0.0f, 0.08f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.Use();
@@ -154,15 +153,81 @@ int main()
 		glBindTexture(GL_TEXTURE_2D , texture );//  Association  du  numero  de la  texture  pour le  shader
 		glUniform1i(glGetUniformLocation(shader.Program , "maTexture"), 0);
 
-		glBindVertexArray(VAO);
+        glBindVertexArray(VAO);
 
         // Position et couleur de la lumiere
         GLint lightPos = glGetUniformLocation(shader.Program, "lightPos");
         GLint lightColor = glGetUniformLocation(shader.Program, "lightColor");
-        glm::vec3 lPos(0.0f, 150.0f, 0.0f);
+        GLint ambientStrength = glGetUniformLocation(shader.Program, "ambientStrength");
+        GLfloat ambStr(0.05f);
+        glm::vec4 lPos(0.0f, 5000.0f, 0.0f, 1.0f);
         glm::vec3 lColor(1.0f, 1.0f, 1.0f);
+
+        glm::mat4 rot;
+        //Un cycle jour/nuit dure 240 secondes : 2 minutes de jour, 2 minutes de nuit
+        GLfloat angle = glm::mod(2*M_PI*(glfwGetTime()/240), 2*M_PI);
+        rot = glm::rotate(rot, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+        lPos = rot * lPos;
+
+        //Si le 'soleil' est en-dessous de l'horizon, il ne fait plus de lumière, il fait nuit
+        //La lumière ambiante est faible et de couleur bleue foncée
+        if (angle > M_PI/2 && angle < 3*M_PI/2){
+            lColor = glm::vec3(0.0f, 0.0f, 0.05f);
+
+            //Couleur du ciel de nuit
+            glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
+
+            //Lumière ambiante faible
+            ambStr = 0.05f;
+
+        //Lumière crépusculaire, orangée et diminuant au fil du temps
+        } else if (angle > M_PI/4 && angle < 3*M_PI/2){
+            //Variable x utilisée : vaut 1 au début du crépuscule, et 0 à la fin
+            double x = (M_PI/2 - angle)/(M_PI/2 - M_PI/4);
+
+            //Lumière orangée, le 0.05f en B permet la continuité avec la nuit
+            lColor = glm::vec3(x * 1.0f, pow(x, 2) * 1.0f, pow(x, 4) * 1.0f + 0.05f);
+
+            //Couleur du 'ciel', le polynôme en x utilisé pour le calcul de R est construit de telle sorte que R(0) = R(1) = 0 et R(0.5) = 0.5
+            //Le 0.2f en B permet la continuité avec la nuit
+            glClearColor((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.2f, 1.0f);
+
+            //Lumière ambiante décroissante et continue, cohérente avec les valeurs de jour et de nuit
+            ambStr = x * 0.65f + 0.05f;
+
+
+        //Lueur de l'aube
+        } else if (angle > 3*M_PI/2 && angle < 5*M_PI/3){
+            //Variable x utilisée : vaut 0 au début de l'aube, et 1 à la fin
+            double x = (3*M_PI/2 - angle)/(3*M_PI/2 - 5*M_PI/3);
+
+            //Lueur rosée-bleutée, le 0.05f en B permet la continuité avec la nuit
+            lColor = glm::vec3(pow(x,4) * 1.0f, pow(x, 2) * 1.0f, x * 1.0f + 0.05f);
+
+            //Couleur du 'ciel', le polynôme en x utilisé pour le calcul de R est construit de telle sorte que R(0) = R(1) = 0 et R(0.5) = 0.5
+            //Le 0.2f en B permet la continuité avec la nuit
+            glClearColor((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.2f, 1.0f);
+
+            //Lumière ambiante croissante et continue, cohérente avec les valeurs de jour et de nuit
+            ambStr = x * 0.65f + 0.05f;
+
+
+        //Lumière de jour
+        } else{
+            //Lumière blanche
+            lColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+            //Ciel bleu
+            glClearColor(0.0f, 0.5f, 1.0f, 1.0f);
+
+            //Lumière ambiante forte
+            ambStr = 0.7f;
+        }
+
+
         glUniform3f(lightPos, lPos.x, lPos.y, lPos.z);
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
+        glUniform1f(ambientStrength, ambStr);
 		
         // On met a jour les variables globales du shader
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));

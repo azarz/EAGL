@@ -78,10 +78,10 @@ int main()
 	
 	GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
-        -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 500.0f, // Top Left
+        -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 250.0f, // Top Left
         -50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
-         50.0f, -0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   500.0f, 500.0f, // Top Right
-         50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   500.0f, 0.0f  // Bottom Right
+         50.0f, -0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   250.0f, 250.0f, // Top Right
+         50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   250.0f, 0.0f  // Bottom Right
     };
     
     GLshort indices[]{
@@ -121,18 +121,28 @@ int main()
 	
     Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
     
+    // On charge le modele
+    Model maison("model/House/house.obj");
+
+
     // Game loop
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
         camera.Do_Movement();
+        camera.Switch_Mode();
         
         glClearColor(0.0f, 0.08f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.Use();
+
+        // On récupère les identifiants des variables globales du shader
+        GLint modelLoc = glGetUniformLocation(shader.Program, "model");
+
         glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
+
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
         
@@ -147,8 +157,20 @@ int main()
 
 		glBindVertexArray(VAO);
 		
-        // On dessine l'objet courant 
+        // On dessine l'objet courant
         glDrawElements(GL_TRIANGLES, 3*2, GL_UNSIGNED_SHORT, 0);
+
+        // Dessin des objets :
+        // On associe la matrice unite a notre matrice model
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0, 0, -10));
+        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.1f));
+        // On remet a jour la variable global du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        maison.Draw(shader);
+
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);

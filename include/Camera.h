@@ -92,36 +92,53 @@ public:
     void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
     {
         GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (direction == FORWARD)
-            this->Position += this->Front * velocity;
-        if (direction == BACKWARD)
-            this->Position -= this->Front * velocity;
-        if (direction == LEFT)
-            this->Position -= this->Right * velocity;
-        if (direction == RIGHT)
-            this->Position += this->Right * velocity;
+        if (type != SKY){
+            //Si la caméra n'est pas dans les airs, le fonctionnement est normal
+            if (direction == FORWARD)
+                this->Position += this->Front * velocity;
+            if (direction == BACKWARD)
+                this->Position -= this->Front * velocity;
+            if (direction == LEFT)
+                this->Position -= this->Right * velocity;
+            if (direction == RIGHT)
+                this->Position += this->Right * velocity;
+
+        } else {
+            //Sinon, le déplcement est particulier : y constant et seuls x et z changent linéairement
+            if (direction == FORWARD)
+                this->Position += glm::vec3(0.0f, 0.0f, -1.0f)  * velocity;
+            if (direction == BACKWARD)
+                this->Position -= glm::vec3(0.0f, 0.0f, -1.0f) * velocity;
+            if (direction == LEFT)
+                this->Position -= glm::vec3(1.0f, 0.0f, 0.0f) * velocity;
+            if (direction == RIGHT)
+                this->Position += glm::vec3(1.0f, 0.0f, 0.0f) * velocity;
+
+        }
     }
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true)
     {
-        xoffset *= this->MouseSensitivity;
-        yoffset *= this->MouseSensitivity;
+        if (this->type != SKY){
+            xoffset *= this->MouseSensitivity;
+            yoffset *= this->MouseSensitivity;
 
-        this->Yaw   += xoffset;
-        this->Pitch += yoffset;
+            this->Yaw   += xoffset;
+            this->Pitch += yoffset;
 
-        // Make sure that when pitch is out of bounds, screen doesn't get flipped
-        if (constrainPitch)
-        {
-            if (this->Pitch > 89.0f)
-                this->Pitch = 89.0f;
-            if (this->Pitch < -89.0f)
-                this->Pitch = -89.0f;
+            // Make sure that when pitch is out of bounds, screen doesn't get flipped
+            if (constrainPitch)
+            {
+                if (this->Pitch > 89.0f)
+                    this->Pitch = 89.0f;
+                if (this->Pitch < -89.0f)
+                    this->Pitch = -89.0f;
+            }
+
+            // Update Front, Right and Up Vectors using the updated Eular angles
+            this->updateCameraVectors();
         }
-
-        // Update Front, Right and Up Vectors using the updated Eular angles
-        this->updateCameraVectors();
     }
 
     // Moves/alters the camera positions based on user input
@@ -148,7 +165,33 @@ public:
 	}
 
         if(this->type == GROUND){
-                this->Position.y = 0.5f;
+                this->Position.y = 1.0f;
+
+        } else if(this->type == SKY){
+                this->Pitch = -70.0f;
+                this->Position.y = 25.0f;
+        }
+
+    }
+
+    //Switch between camera modes
+    void Switch_Mode(){
+        if(keys[32]){
+            if(this->type == GROUND){
+                this->type  =  SKY;
+                this->Pitch = -70.0f;
+                this->Yaw   =  YAW;
+                this->updateCameraVectors();
+                this->Up    =  glm::vec3(0.0f, 0.0f, -1.0f);
+                this->MovementSpeed = 12*SPEED;
+            }else{
+                this->type  = GROUND;
+                this->Pitch = 0.0f;
+                this->updateCameraVectors();
+                this->Up    = glm::vec3(0.0f, 1.0f, 0.0f);
+                this->MovementSpeed = SPEED;
+            }
+            keys[32] = false;
         }
     }
 
@@ -179,12 +222,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
     
-    if(action == GLFW_PRESS && key != 32)
+    if(action == GLFW_PRESS)
         keys[key] = true;
-    else if(action == GLFW_RELEASE && key != 32)
+    else if(action == GLFW_RELEASE)
         keys[key] = false;
-    else if(action == GLFW_PRESS && key == 32)
-        keys[key] = !keys[key];
 }
 
 

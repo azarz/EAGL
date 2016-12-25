@@ -23,6 +23,7 @@ enum Camera_Movement {
     RIGHT
 };
 
+//Les 2 types de caméra que nous utilisons
 enum Camera_Type {
     GROUND,
     SKY
@@ -63,7 +64,7 @@ public:
     GLfloat deltaTime;
     GLfloat lastFrame;
 
-    //Mod
+    //Le mode de caméra
     Camera_Type type;
 
     // Constructor with vectors
@@ -104,7 +105,7 @@ public:
                 this->Position += this->Right * velocity;
 
         } else {
-            //Sinon, le déplcement est particulier : y constant et seuls x et z changent linéairement
+            //Sinon, le déplcement est particulier : y est constant et seuls x et z changent linéairement
             if (direction == FORWARD)
                 this->Position += glm::vec3(0.0f, 0.0f, -1.0f)  * velocity;
             if (direction == BACKWARD)
@@ -121,6 +122,7 @@ public:
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true)
     {
         if (this->type != SKY){
+            //Si la caméra et dans les airs, alors la souris n'est pas prise en compte
             xoffset *= this->MouseSensitivity;
             yoffset *= this->MouseSensitivity;
 
@@ -149,6 +151,7 @@ public:
         this->lastFrame = currentFrame;
 
         // Camera controls
+        //(on a rajouté à ZQSD les touches directionnelles)
         if(keys[87] || keys [265])
             this->ProcessKeyboard(FORWARD, this->deltaTime);
         if(keys[83] || keys [264])
@@ -164,29 +167,33 @@ public:
 		mouse_on = false;
 	}
 
+        //Condition qui permet à la caméra de rester à une altitude constante sur le sol
+        //(inutile dans les airs car les déplacements se font à y constant)
         if(this->type == GROUND){
                 this->Position.y = 1.0f;
-
-        } else if(this->type == SKY){
-                this->Pitch = -70.0f;
-                this->Position.y = 25.0f;
         }
 
     }
 
-    //Switch between camera modes
+    //Fonction permettant de switcher les modes de caméra avec la touche espace
     void Switch_Mode(){
         if(keys[32]){
             if(this->type == GROUND){
+                //Pour passer dans les airs, on change l'altitude, et on fixe l'orientation à -70° pour faire joli,
+                //de plus le vecteur 'Up' change forcément. On augmente la vitesse pour plus d'ergonomie.
                 this->type  =  SKY;
+                this->Position.y = 25.0f;
                 this->Pitch = -70.0f;
                 this->Yaw   =  YAW;
                 this->updateCameraVectors();
                 this->Up    =  glm::vec3(0.0f, 0.0f, -1.0f);
                 this->MovementSpeed = 12*SPEED;
             }else{
+                //Pour passer sur le sol, on réoriente la caméra (pour ne pas se retrouver à regarder le sol), et on retourne à
+                //l'altitude normale, en réinitalisant 'Up' et la vitesse
                 this->type  = GROUND;
                 this->Pitch = 0.0f;
+                this->Position.y = 1.0f;
                 this->updateCameraVectors();
                 this->Up    = glm::vec3(0.0f, 1.0f, 0.0f);
                 this->MovementSpeed = SPEED;

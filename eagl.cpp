@@ -130,6 +130,7 @@ int main()
     {
         glfwPollEvents();
         camera.Do_Movement();
+        //Fonction permettant de changer de mode de caméra, appelée si la barre espace est enfoncée
         camera.Switch_Mode();
         
         glClearColor(0.0f, 0.08f, 0.3f, 1.0f);

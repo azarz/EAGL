@@ -1,5 +1,6 @@
 // Std. Includes
 #include <string>
+#include <vector>
 
 // GLEW
 #include <GL/glew.h>
@@ -22,6 +23,10 @@
 
 // Properties
 GLuint screenWidth = 960, screenHeight = 720;
+GLfloat ANGLE_CREPUSC(3*M_PI/5);
+GLfloat ANGLE_AUBE(4*M_PI/3);
+//Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
+GLint DUREE_CYCLE(240);
 
 int main()
 {
@@ -76,7 +81,7 @@ int main()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	
-	GLfloat vertices[] = {
+    GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
         -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 125.0f, // Top Left
         -50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
@@ -86,8 +91,8 @@ int main()
     
     GLshort indices[]{
         0, 1, 2,
-    	1, 2, 3
-    };    
+        1, 2, 3
+    };
     
     GLuint VBO, VAO, EBO;
     
@@ -109,10 +114,10 @@ int main()
     // Attribut des positions
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
-    // Attribut des couleurs
+    // Attribut des normales
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
-    // Attribut des normales
+    // Attribut des coordonnées UV
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6*sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
     
@@ -121,8 +126,10 @@ int main()
 	
     Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
     
-    // On charge le modele
+    // On charge les modèles
     Model maison("model/House/house.obj");
+
+    Model soleil("model/Sun/soleil.obj");
 
 
     // Game loop
@@ -160,53 +167,54 @@ int main()
         GLint lightColor = glGetUniformLocation(shader.Program, "lightColor");
         GLint ambientStrength = glGetUniformLocation(shader.Program, "ambientStrength");
         GLfloat ambStr(0.05f);
-        glm::vec4 lPos(0.0f, 5000.0f, 0.0f, 1.0f);
+        //On la positionne en relatif par rapport à la caméra
+        glm::vec4 lPos(0.0f, camera.Position.y + 50.0f, 0.0f, 1.0f);
         glm::vec3 lColor(1.0f, 1.0f, 1.0f);
 
         glm::mat4 rot;
-        //Un cycle jour/nuit dure 240 secondes : 2 minutes de jour, 2 minutes de nuit
-        GLfloat angle = glm::mod(2*M_PI*(glfwGetTime()/240), 2*M_PI);
+        GLfloat angle = glm::mod(2*M_PI*(glfwGetTime()/DUREE_CYCLE), 2*M_PI);
         rot = glm::rotate(rot, angle, glm::vec3(0.0f, 0.0f, 1.0f));
         lPos = rot * lPos;
 
+        glm::vec3 clearColor;
         //Si le 'soleil' est en-dessous de l'horizon, il ne fait plus de lumière, il fait nuit
         //La lumière ambiante est faible et de couleur bleue foncée
-        if (angle > M_PI/2 && angle < 3*M_PI/2){
+        if (angle > ANGLE_CREPUSC && angle < ANGLE_AUBE){
             lColor = glm::vec3(0.0f, 0.0f, 0.05f);
 
             //Couleur du ciel de nuit
-            glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
+            clearColor = glm::vec3(0.0f, 0.0f, 0.2f);
 
             //Lumière ambiante faible
             ambStr = 0.05f;
 
         //Lumière crépusculaire, orangée et diminuant au fil du temps
-        } else if (angle > M_PI/4 && angle < 3*M_PI/2){
+        } else if (angle > M_PI/4 && angle < ANGLE_CREPUSC){
             //Variable x utilisée : vaut 1 au début du crépuscule, et 0 à la fin
-            double x = (M_PI/2 - angle)/(M_PI/2 - M_PI/4);
+            double x = (ANGLE_CREPUSC - angle)/(ANGLE_CREPUSC - M_PI/4);
 
             //Lumière orangée, le 0.05f en B permet la continuité avec la nuit
             lColor = glm::vec3(x * 1.0f, pow(x, 2) * 1.0f, pow(x, 4) * 1.0f + 0.05f);
 
             //Couleur du 'ciel', le polynôme en x utilisé pour le calcul de R est construit de telle sorte que R(0) = R(1) = 0 et R(0.5) = 0.5
             //Le 0.2f en B permet la continuité avec la nuit
-            glClearColor((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.2f, 1.0f);
+            clearColor = glm::vec3((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.2f);
 
             //Lumière ambiante décroissante et continue, cohérente avec les valeurs de jour et de nuit
             ambStr = x * 0.65f + 0.05f;
 
 
         //Lueur de l'aube
-        } else if (angle > 3*M_PI/2 && angle < 5*M_PI/3){
+        } else if (angle > ANGLE_AUBE && angle < 5*M_PI/3){
             //Variable x utilisée : vaut 0 au début de l'aube, et 1 à la fin
-            double x = (3*M_PI/2 - angle)/(3*M_PI/2 - 5*M_PI/3);
+            double x = (ANGLE_AUBE - angle)/(ANGLE_AUBE - 5*M_PI/3);
 
             //Lueur rosée-bleutée, le 0.05f en B permet la continuité avec la nuit
             lColor = glm::vec3(pow(x,4) * 1.0f, pow(x, 2) * 1.0f, x * 1.0f + 0.05f);
 
             //Couleur du 'ciel', le polynôme en x utilisé pour le calcul de R est construit de telle sorte que R(0) = R(1) = 0 et R(0.5) = 0.5
             //Le 0.2f en B permet la continuité avec la nuit
-            glClearColor((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.2f, 1.0f);
+            clearColor = glm::vec3((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.2f);
 
             //Lumière ambiante croissante et continue, cohérente avec les valeurs de jour et de nuit
             ambStr = x * 0.65f + 0.05f;
@@ -218,13 +226,13 @@ int main()
             lColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
             //Ciel bleu
-            glClearColor(0.0f, 0.5f, 1.0f, 1.0f);
+            clearColor = glm::vec3(0.0f, 0.5f, 1.0f);
 
             //Lumière ambiante forte
             ambStr = 0.7f;
         }
 
-
+        glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
         glUniform3f(lightPos, lPos.x, lPos.y, lPos.z);
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
         glUniform1f(ambientStrength, ambStr);
@@ -238,12 +246,33 @@ int main()
         glDrawElements(GL_TRIANGLES, 3*2, GL_UNSIGNED_SHORT, 0);
 
         // Dessin des objets :
+
+        // Soleil
+        model = glm::mat4(1.0f);
+        //On le positionne en relatif par rapport à la caméra
+        model = glm::translate(model, glm::vec3(0.0f, camera.Position.y + 60.0f, 0.0f));
+        model = rot*model;
+        model = glm::scale(model, glm::vec3(2.0f));
+
+        // On remet a jour la variable globale du shader, avec une lumière ambiante et une couleur propres au soleil
+        glUniform1f(ambientStrength, 3.5f);
+        glUniform3f(lightColor, lColor.x + 0.4f, clearColor.y, 0.0f);
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        // On redessine l’objet
+        soleil.Draw(shader);
+        //on repasse au variables de shader normales
+        glUniform1f(ambientStrength, ambStr);
+        glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
+
+
+
         // On associe la matrice unite a notre matrice model
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0, 0, -10));
         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f));
-        // On remet a jour la variable global du shader
+        // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
         maison.Draw(shader);

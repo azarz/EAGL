@@ -169,7 +169,7 @@ public:
 
         //Condition qui permet à la caméra de rester à une altitude constante sur le sol
         //(inutile dans les airs car les déplacements se font à y constant)
-        if(this->type == GROUND){
+        if(this->type != SKY){
                 this->Position.y = 1.0f;
         }
 

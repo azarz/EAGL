@@ -1,0 +1,105 @@
+OPRP
+
+LoadObject STLamp.obj
+
+EditSurface Default
+SurfaceBlendMode Normal
+SurfaceBlendOperation Add
+SurfaceDiffuseMap 
+SurfaceNormalMap 
+SurfaceSpecularMap 
+SurfaceDetailMap 
+SurfaceShaderSpec 
+SurfaceShaderEnabled 1
+SurfaceFlags 
+SurfaceTextureFlags 
+SurfaceSpecular 0
+SurfaceShinyness 128
+SurfaceDetailAmount 0
+SurfaceDetailMapScale 1
+SurfaceTextureAnimLayers 1
+SurfaceTextureScale 0 1.000000 1.000000
+SurfaceTextureOffset 0 0.000000 0.000000
+SurfaceTextureAnim 0 0.000000 0.000000
+SurfaceTextureStep 0 0.000000 0.000000
+SurfaceWaveParams 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+SurfaceNormalMapScale 1
+SurfaceDisplacement 0
+SurfaceNormalOffset 0
+SurfaceNormalMapIntensity 1
+SurfaceLuminosity 0
+SurfaceDiffuse 1
+SurfaceTransparency 0
+SurfaceTranslucency 0
+SurfaceColor 201 201 201
+SurfaceDrawOrder 0
+SurfaceNoDebugOverride 0
+SurfaceAlphaTestThreshold 127
+
+EditSurface pasted__blinn1SG
+SurfaceBlendMode Normal
+SurfaceBlendOperation Add
+SurfaceDiffuseMap ../../../Textures/Building Materials/Metals/ChippedMetal.tga
+SurfaceNormalMap 
+SurfaceSpecularMap 
+SurfaceDetailMap 
+SurfaceShaderSpec 
+SurfaceShaderEnabled 1
+SurfaceFlags DoubleSided
+SurfaceTextureFlags 
+SurfaceSpecular 0.41
+SurfaceShinyness 128
+SurfaceDetailAmount 0
+SurfaceDetailMapScale 1
+SurfaceTextureAnimLayers 1
+SurfaceTextureScale 0 1.000000 1.000000
+SurfaceTextureOffset 0 0.000000 0.000000
+SurfaceTextureAnim 0 0.000000 0.000000
+SurfaceTextureStep 0 0.000000 0.000000
+SurfaceWaveParams 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+SurfaceNormalMapScale 1
+SurfaceDisplacement 0
+SurfaceNormalOffset 0
+SurfaceNormalMapIntensity 1
+SurfaceLuminosity 0
+SurfaceDiffuse 0.32
+SurfaceTransparency 0
+SurfaceTranslucency 0
+SurfaceColor 255 255 255
+SurfaceDrawOrder 0
+SurfaceNoDebugOverride 0
+SurfaceAlphaTestThreshold 127
+
+EditSurface pasted__blinn2SG
+SurfaceBlendMode Normal
+SurfaceBlendOperation Add
+SurfaceDiffuseMap Glass.tga
+SurfaceNormalMap 
+SurfaceSpecularMap 
+SurfaceDetailMap 
+SurfaceShaderSpec 
+SurfaceShaderEnabled 1
+SurfaceFlags ZBufferAlpha
+SurfaceTextureFlags 
+SurfaceSpecular 0
+SurfaceShinyness 128
+SurfaceDetailAmount 0
+SurfaceDetailMapScale 1
+SurfaceTextureAnimLayers 1
+SurfaceTextureScale 0 1.000000 1.000000
+SurfaceTextureOffset 0 0.000000 0.000000
+SurfaceTextureAnim 0 0.000000 0.000000
+SurfaceTextureStep 0 0.000000 0.000000
+SurfaceWaveParams 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+SurfaceNormalMapScale 1
+SurfaceDisplacement 0
+SurfaceNormalOffset 0
+SurfaceNormalMapIntensity 1
+SurfaceLuminosity 0.13
+SurfaceDiffuse 1
+SurfaceTransparency 0
+SurfaceTranslucency 0
+SurfaceColor 255 255 255
+SurfaceDrawOrder 0
+SurfaceNoDebugOverride 0
+SurfaceAlphaTestThreshold 127

@@ -43,7 +43,7 @@ add_executable(EAGL
 	shaders/default.vertexshader
 	shaders/default.fragmentshader
 )
-target_link_libraries(main
+target_link_libraries(EAGL
 	${ALL_LIBS}
 )
 # Xcode and Visual working directories

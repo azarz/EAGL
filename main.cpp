@@ -27,7 +27,7 @@ GLuint screenWidth = 1280, screenHeight = 720;
 GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 //Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
-GLint DUREE_CYCLE(240);
+GLint DUREE_CYCLE(30);
 
 int main()
 {
@@ -194,6 +194,7 @@ int main()
     Model maison("model/House/house.obj");
     Model soleil("model/Sun/soleil.obj");
     Model lamp("model/Lamp/Lamp.obj");
+    Model lit_lamp("model/Lamp/litLamp/Lamp.obj");
 
     // Game loop
     while(!glfwWindowShouldClose(window))
@@ -324,7 +325,7 @@ int main()
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
         //Position utilisée plus tard pour le placement du modèle
-        glm::vec3 lmpPos(4.0f, 1.2f, -7.0f);
+        glm::vec3 lmpPos(4.0f, 1.6f, -7.0f);
         glUniform3f(lampPos, lmpPos.x, lmpPos.y , lmpPos.z);
 
 
@@ -361,8 +362,18 @@ int main()
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
-        lamp.Draw(shader);
+        // De nuit, le lampadaire est allumé: il change de couleur et brille
+        if(lmpColor.x != 0.0f){
+            glUniform1f(ambientStrength, 0.7f);
+            glUniform3f(lightColor, lmpColor.x, lmpColor.y, lmpColor.z);
 
+            lit_lamp.Draw(shader);
+            //on repasse au variables de shader normales
+            glUniform1f(ambientStrength, ambStr);
+            glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
+        } else{
+            lamp.Draw(shader);
+        }
 
         // Maison
         model = glm::mat4(1.0f);

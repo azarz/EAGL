@@ -37,8 +37,8 @@ add_definitions(
 )
 
 # Tutorial 1
-add_executable(main 
-	eagl.cpp
+add_executable(EAGL 
+	main.cpp
 	src/Shader.cpp
 	shaders/default.vertexshader
 	shaders/default.fragmentshader

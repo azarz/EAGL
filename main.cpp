@@ -27,7 +27,7 @@ GLuint screenWidth = 1280, screenHeight = 720;
 GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 //Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
-GLint DUREE_CYCLE(30);
+GLint DUREE_CYCLE(240);
 
 int main()
 {
@@ -103,7 +103,9 @@ int main()
     
 
     //Définition d'une grille pour pouvoir définir des altitudes
-    //Plus gourmand, donc non implémenté pour l'instant, on utilisera le sol simple
+    //Plus gourmand, donc non implémenté pour l'instant
+    //Pour l'implémenter, il suffira de décommenter le bloc suivant et de commenter
+    //la précédente définition de vertices et indices
 
 //    int deltaX = 50;
 //    int deltaZ = 50;
@@ -195,8 +197,11 @@ int main()
     Model soleil("model/Sun/soleil.obj");
     Model lamp("model/Lamp/Lamp.obj");
     Model lit_lamp("model/Lamp/litLamp/Lamp.obj");
+    Model arbre1("model/Trees/Tree1/Tree1.3ds");
+    Model arbre2("model/Trees/Tree2/Tree2.3ds");
 
-    // Game loop
+
+    // Boucle principale
     while(!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -317,7 +322,7 @@ int main()
 
         //Couleur lampe à sodium, si il fait sombre
         glm::vec3 lmpColor;
-        if (angle > M_PI/3 && angle < 5*M_PI/3){
+        if (angle > 2*M_PI/5 && angle < 8*M_PI/5){
             lmpColor = glm::vec3(1.0f, 0.56f, 0.17f);
         } else {
             lmpColor = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -343,13 +348,16 @@ int main()
         model = rot*model;
         model = glm::scale(model, glm::vec3(2.0f));
         // On remet a jour la variable globale du shader, avec une lumière ambiante et une couleur propres au soleil
-        glUniform1f(ambientStrength, 3.5f);
+        // De plus, la lumière des lampadaires ne l'affecte pas
+        glUniform1f(ambientStrength, 5.0f);
+        glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
         glUniform3f(lightColor, lColor.x + 0.4f, clearColor.y, 0.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         // On redessine l’objet
         soleil.Draw(shader);
         //on repasse au variables de shader normales
+        glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
         glUniform1f(ambientStrength, ambStr);
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
 
@@ -375,7 +383,8 @@ int main()
             lamp.Draw(shader);
         }
 
-        // Maison
+        // Maisons
+        // Maison1
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, -10.0f));
         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
@@ -385,8 +394,42 @@ int main()
         // On redessine l’objet
         maison.Draw(shader);
 
-        glBindVertexArray(0);
+        // Maison2
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-6.0f, 0.0f, -4.0f));
+        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(0.1f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        maison.Draw(shader);
 
+
+        // Arbres
+        // Arbre1
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 3.0f));
+        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        arbre1.Draw(shader);
+
+        // Arbre2
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(6.0f, 0.0f, -3.0f));
+        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.7f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        arbre2.Draw(shader);
+
+
+
+        glBindVertexArray(0);
         glfwSwapBuffers(window);
     }
     

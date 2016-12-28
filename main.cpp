@@ -87,10 +87,10 @@ int main()
     //Définition du sol, carré allant de -50,-50 à 50,50
     GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
-        -50.0f,  0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 125.0f, // Top Left
-        -50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
-         50.0f, -0.0f, -50.0f,   0.0f, 1.0f, 0.0f,   125.0f, 125.0f, // Top Right
-         50.0f,  0.0f,  50.0f,   0.0f, 1.0f, 0.0f,   125.0f, 0.0f  // Bottom Right
+        -500.0f,  0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1250.0f, // Top Left
+        -500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
+         500.0f, -0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 1250.0f, // Top Right
+         500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 0.0f  // Bottom Right
     };
 
     GLshort indices[]{
@@ -110,6 +110,7 @@ int main()
 //    int deltaX = 50;
 //    int deltaZ = 50;
 
+//    GLfloat altitude;
 //    float uStep = 1.25f;
 //    float vStep = 1.25f;
 
@@ -119,15 +120,28 @@ int main()
 //    for (int Z = -deltaZ; Z < deltaZ; Z++) {
 //        for (int X = -deltaX; X < deltaX; X++) {
 
-//            glm::vec3 vertex1(X, 0.0 , Z);
+//            if(true){
+//                altitude = 0.0f;
+//            } else {
+//                altitude = 0.0f;
+//            }
+
+//            glm::vec3 vertex1(X, altitude, Z);
+//            glm::vec3 vertex2(X, altitude, Z+1);
+//            glm::vec3 vertex3(X+1, altitude, Z+1);
+
+//            glm::vec3 edge1 = vertex2 - vertex1;
+//            glm::vec3 edge2 = vertex3 - vertex1;
+//            glm::vec3 normal = glm::cross(edge1, edge2);
+//            normal.normalize();
 
 //            verticesV.push_back(vertex1.x);
 //            verticesV.push_back(vertex1.y);
 //            verticesV.push_back(vertex1.z);
 
-//            verticesV.push_back(0.0f);
-//            verticesV.push_back(1.0f);
-//            verticesV.push_back(0.0f);
+//            verticesV.push_back(normal.x);
+//            verticesV.push_back(normal.y);
+//            verticesV.push_back(normal.z);
 
 //            verticesV.push_back(X * uStep);
 //            verticesV.push_back(Z * vStep);
@@ -199,7 +213,9 @@ int main()
     Model lit_lamp("model/Lamp/litLamp/Lamp.obj");
     Model arbre1("model/Trees/Tree1/Tree1.3ds");
     Model arbre2("model/Trees/Tree2/Tree2.3ds");
-
+    Model cloud("model/Cloud/nuage2.obj");
+    Model shuttle("model/Shuttle/tyderium.obj");
+   Model car("model/Car/voiture_nulle.obj");
 
     // Boucle principale
     while(!glfwWindowShouldClose(window))
@@ -240,7 +256,7 @@ int main()
         GLint ambientStrength = glGetUniformLocation(shader.Program, "ambientStrength");
         GLfloat ambStr(0.05f);
         //On la positionne en relatif par rapport à la caméra
-        glm::vec4 lPos(0.0f, camera.Position.y + 50.0f, 0.0f, 1.0f);
+        glm::vec4 lPos(camera.Position.x, camera.Position.y + 50.0f, camera.Position.z, 1.0f);
         glm::vec3 lColor(1.0f, 1.0f, 1.0f);
 
         glm::mat4 rot;
@@ -344,7 +360,7 @@ int main()
         // Soleil
         model = glm::mat4(1.0f);
         //On le positionne en relatif par rapport à la caméra
-        model = glm::translate(model, glm::vec3(0.0f, camera.Position.y + 60.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(camera.Position.x, camera.Position.y + 60.0f, camera.Position.z));
         model = rot*model;
         model = glm::scale(model, glm::vec3(2.0f));
         // On remet a jour la variable globale du shader, avec une lumière ambiante et une couleur propres au soleil
@@ -411,7 +427,7 @@ int main()
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 3.0f));
         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f));
+        model = glm::scale(model, glm::vec3(1.3f));
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
@@ -427,7 +443,35 @@ int main()
         // On redessine l’objet
         arbre2.Draw(shader);
 
+        // Nuage
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-60.0f, 30.0f, 10.0f));
+        model = glm::scale(model, glm::vec3(3.0f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        cloud.Draw(shader);
 
+
+        // Navette Impériale
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 15.0f, 2.0f));
+        model = glm::rotate(model, (GLfloat) 0.0, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.004f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        shuttle.Draw(shader);
+
+
+        // Voiture
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // On redessine l’objet
+        car.Draw(shader);
 
         glBindVertexArray(0);
         glfwSwapBuffers(window);

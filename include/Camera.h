@@ -14,8 +14,8 @@
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 
+// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
     FORWARD,
     BACKWARD,
@@ -34,6 +34,7 @@ const GLfloat YAW        = -90.0f;
 const GLfloat PITCH      =  0.0f;
 const GLfloat SPEED      =  3.0f;
 const GLfloat SENSITIVTY =  0.25f;
+const Camera_Type DEFAULTTYPE = GROUND;
 
 bool keys[1024];
 GLfloat lastX = 400;
@@ -68,13 +69,14 @@ public:
     Camera_Type type;
 
     // Constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),  GLFWwindow* window = nullptr, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH, Camera_Type type = GROUND) :
+    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),  GLFWwindow* window = nullptr, glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH, Camera_Type type = DEFAULTTYPE) :
     Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), deltaTime(0.0f), lastFrame(0.0f)
     {
         this->Position = position;
         this->WorldUp = up;
         this->Yaw = yaw;
         this->Pitch = pitch;
+        this->type = type;
         this->updateCameraVectors();
 
         glfwSetKeyCallback(window, key_callback);
@@ -169,7 +171,7 @@ public:
 
         //Condition qui permet à la caméra de rester à une altitude constante sur le sol
         //(inutile dans les airs car les déplacements se font à y constant)
-        if(this->type != SKY){
+        if(this->type == GROUND){
                 this->Position.y = 1.0f;
         }
 

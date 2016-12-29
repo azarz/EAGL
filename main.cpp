@@ -1,6 +1,7 @@
 // Std. Includes
 #include <string>
 #include <vector>
+#include <ctime>
 
 // GLEW
 #include <GL/glew.h>
@@ -27,7 +28,7 @@ GLuint screenWidth = 1280, screenHeight = 720;
 GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 //Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
-GLint DUREE_CYCLE(240);
+GLint DUREE_CYCLE(60);
 
 int main()
 {
@@ -52,7 +53,8 @@ int main()
     glViewport(0, 0, width, height);
     
     glEnable(GL_DEPTH_TEST);
-    
+    glfwSwapInterval(1);
+
     Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
 
     GLuint texture; // Declaration de l'identifiant
@@ -215,7 +217,27 @@ int main()
     Model arbre2("model/Trees/Tree2/Tree2.3ds");
     Model cloud("model/Cloud/nuage2.obj");
     Model shuttle("model/Shuttle/tyderium.obj");
-   Model car("model/Car/voiture_nulle.obj");
+    Model car("model/Car/car.obj");
+
+
+    //Initialisation des nuages
+    GLfloat vitesseNuages;
+    GLint nbNuages;
+    srand(std::time(NULL)); //Initialise la seed de manière différente à chaque lancement du programme
+    vitesseNuages = rand()%51/5; //Vitesse des nuages, entre 0 et 5 écrans/s
+    nbNuages = rand()%501; //Nombre de nuages, entre 0 et 500
+
+    GLfloat xNua[nbNuages];
+    GLfloat zNua[nbNuages];
+
+    //Positions initiales des nuages
+    for(int i(0); i < nbNuages; i++){
+        xNua[i] = (rand()%1001) - 500;
+        zNua[i] = (rand()%1001) - 500;
+    }
+
+
+
 
     // Boucle principale
     while(!glfwWindowShouldClose(window))
@@ -235,7 +257,7 @@ int main()
         // On récupère les identifiants des variables globales du shader
         GLint modelLoc = glGetUniformLocation(shader.Program, "model");
 
-        glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 500.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
         
@@ -254,9 +276,11 @@ int main()
         GLint lightPos = glGetUniformLocation(shader.Program, "lightPos");
         GLint lightColor = glGetUniformLocation(shader.Program, "lightColor");
         GLint ambientStrength = glGetUniformLocation(shader.Program, "ambientStrength");
+        GLint specularStrength = glGetUniformLocation(shader.Program, "specularStrength");
         GLfloat ambStr(0.05f);
+        GLfloat specStr(0.3f);
         //On la positionne en relatif par rapport à la caméra
-        glm::vec4 lPos(camera.Position.x, camera.Position.y + 50.0f, camera.Position.z, 1.0f);
+        glm::vec4 lPos(camera.Position.x, camera.Position.y + 450.0f, camera.Position.z, 1.0f);
         glm::vec3 lColor(1.0f, 1.0f, 1.0f);
 
         glm::mat4 rot;
@@ -325,6 +349,7 @@ int main()
         glUniform3f(lightPos, lPos.x, lPos.y, lPos.z);
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
         glUniform1f(ambientStrength, ambStr);
+        glUniform1f(specularStrength, specStr);
 		
         // On met a jour les variables globales du shader
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -360,9 +385,9 @@ int main()
         // Soleil
         model = glm::mat4(1.0f);
         //On le positionne en relatif par rapport à la caméra
-        model = glm::translate(model, glm::vec3(camera.Position.x, camera.Position.y + 60.0f, camera.Position.z));
+        model = glm::translate(model, glm::vec3(camera.Position.x, camera.Position.y + 490.0f, camera.Position.z));
         model = rot*model;
-        model = glm::scale(model, glm::vec3(2.0f));
+        model = glm::scale(model, glm::vec3(18.0f));
         // On remet a jour la variable globale du shader, avec une lumière ambiante et une couleur propres au soleil
         // De plus, la lumière des lampadaires ne l'affecte pas
         glUniform1f(ambientStrength, 5.0f);
@@ -443,14 +468,21 @@ int main()
         // On redessine l’objet
         arbre2.Draw(shader);
 
-        // Nuage
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-60.0f, 30.0f, 10.0f));
-        model = glm::scale(model, glm::vec3(3.0f));
-        // On remet a jour la variable globale du shader
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        // On redessine l’objet
-        cloud.Draw(shader);
+        // Nuages, non affectés pas la lumière des lampadaires
+        glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
+        //On parcourt la liste initialisée anvant la rentrée dans la boucle while
+        for(int i(0); i < nbNuages; i++){
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500,
+                                                    30.0f, //Altitudde commune aux nuages
+                                                    zNua[i])); //Les nuages se déplacent d'ouest en est (vent de mer, par exemple)
+            model = glm::scale(model, glm::vec3(3.0f));
+            // On remet a jour la variable globale du shader
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            // On redessine l’objet
+            cloud.Draw(shader);
+        }
+        glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
 
         // Navette Impériale
@@ -466,12 +498,14 @@ int main()
 
         // Voiture
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f));
-        // On remet a jour la variable globale du shader
+        model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.005f));
+        // On remet a jour la variable globale du shader, en ajoutant de la lmuière spéculaire, la voiture reflète la lumière
+        glUniform1f(specularStrength, 6.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
         car.Draw(shader);
+        glUniform1f(specularStrength, specStr);
 
         glBindVertexArray(0);
         glfwSwapBuffers(window);

@@ -184,7 +184,7 @@ public:
                 //Pour passer dans les airs, on change l'altitude, et on fixe l'orientation à -89.9° pour regarder droit dessous,
                 //de plus le vecteur 'Up' change forcément. On augmente la vitesse pour plus d'ergonomie.
                 this->type  =  SKY;
-                this->Position.y = 25.0f;
+                this->Position.y = 35.0f;
                 this->Pitch = -89.9f;
                 this->Yaw   =  YAW;
                 this->updateCameraVectors();

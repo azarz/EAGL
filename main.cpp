@@ -30,6 +30,19 @@ GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 //Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
 GLint DUREE_CYCLE(240);
+GLint nbIlots(30);
+
+
+
+enum Type_Ilot{
+    MAISONS1,
+    MAISONS2,
+    ARBRES1,
+    ARBRES2,
+    ARBRES3
+};
+
+
 
 int main()
 {
@@ -238,6 +251,59 @@ int main()
     }
 
 
+
+    //Initialisation des ilots:
+    GLfloat xIlot[nbIlots];
+    GLfloat zIlot[nbIlots];
+
+    //Positions des centres d'ilots
+    for(int i(0); i < nbIlots; i++){
+
+        GLint j(0); //Distance du carré auquel appartient l'ilot par rapport au centre
+        GLint n(i); //Numéro absolu de l'ilot, puis, après la boucle while, numéro de l'ilot dans son carré
+        GLint k(4); //Nombre d'ilots sur le carré courant
+
+        while(k<n){ //Boucle permettant d'obtenir la valeur de j et de n, qui restent aux valeurs initiales
+            j++;    //Sur le premier carré (4 ilots autour du centre)
+            n-=k;
+            k+=8;
+        }
+
+
+        GLint l = 2 * (j+1); //Largeur du carré courant
+        GLint xzMax = 17 + 34*j; //Valeur absolue maximale du x ou du z du centre de l'ilot
+
+        if(n < l-1){ //Arête ouest du carré (sauf son ilot le plus au sud)
+            xIlot[i] = -xzMax;
+            zIlot[i] =  xzMax - 34*(n + 1);
+        } else if( l-1 <= n &&  n < 2*l - 2 ){ //Arête nord du carré (sauf son ilot le plus à l'ouest)
+            zIlot[i] = -xzMax;
+            xIlot[i] = -xzMax + 34*(n - (l-2));
+        } else if( 2*l-2 <= n && n < 3*l - 3){ //Arête est du carré (sauf son ilot le plus au nord)
+            xIlot[i] =  xzMax;
+            zIlot[i] = -xzMax + 34*(n - (2*l-3));
+        } else{ //Arête sud du carré (sauf son ilot le plus à l'est
+            zIlot[i] = xzMax;
+            xIlot[i] = -xzMax + 34*(n - (3*l-4));
+        }
+
+        if(j==0){      //Cas particulier du permier cercle (pour pouvoir faire un enroulement en escargot, à la manière
+            if(n==0){  //des arrondissements parisiens
+                xIlot[i] = -17;
+                zIlot[i] = -17;
+            } else if(n==1){
+                xIlot[i] =  17;
+                zIlot[i] = -17;
+            } else if(n==2){
+                xIlot[i] =  17;
+                zIlot[i] =  17;
+            } else if(n==3){
+                xIlot[i] = -17;
+                zIlot[i] =  17;
+            }
+        }
+
+    }
 
 
     // Boucle principale
@@ -491,10 +557,10 @@ int main()
         model = glm::translate(model, glm::vec3(0.0f, 15.0f, 15.0f));
         glm::mat4 rot2;
         rot2 = glm::rotate(rot2, 80.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        model=model*rot2;
-	//mouvement circulaire
+        model = model*rot2;
+        //mouvement circulaire
         glm::mat4 rot3;
-        rot3 = glm::rotate(rot3, -angle*10, glm::vec3(0.0f, 1.0f, 0.0f));
+        rot3 = glm::rotate(rot3, -angle*20, glm::vec3(0.0f, 1.0f, 0.0f));
         model=rot3*model;
 
         model = glm::scale(model, glm::vec3(0.004f));
@@ -509,13 +575,30 @@ int main()
         model = glm::translate(model, glm::vec3(2.0f, 0.5f, -7.0f));
 
         model = glm::scale(model, glm::vec3(0.005f));
-        std::cout << glfwGetTime() << std::endl;
         // On remet a jour la variable globale du shader, en ajoutant de la lmuière spéculaire, la voiture reflète la lumière
         glUniform1f(specularStrength, 6.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
         car.Draw(shader);
         glUniform1f(specularStrength, specStr);
+
+
+
+        //Test îlots
+        for(int i(0); i < nbIlots; i++){
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]));
+            model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(0.1f));
+            // On remet a jour la variable globale du shader
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            // On redessine l’objet
+            maison.Draw(shader);
+        }
+
+
+
+
 
         glBindVertexArray(0);
         glfwSwapBuffers(window);

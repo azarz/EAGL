@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <iostream>
 
 // GLEW
 #include <GL/glew.h>
@@ -28,7 +29,7 @@ GLuint screenWidth = 1280, screenHeight = 720;
 GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 //Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
-GLint DUREE_CYCLE(60);
+GLint DUREE_CYCLE(240);
 
 int main()
 {
@@ -487,8 +488,15 @@ int main()
 
         // Navette Impériale
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 15.0f, 2.0f));
-        model = glm::rotate(model, (GLfloat) 0.0, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(0.0f, 15.0f, 15.0f));
+        glm::mat4 rot2;
+        rot2 = glm::rotate(rot2, 80.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        model=model*rot2;
+	//mouvement circulaire
+        glm::mat4 rot3;
+        rot3 = glm::rotate(rot3, -angle*10, glm::vec3(0.0f, 1.0f, 0.0f));
+        model=rot3*model;
+
         model = glm::scale(model, glm::vec3(0.004f));
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -498,8 +506,10 @@ int main()
 
         // Voiture
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+        model = glm::translate(model, glm::vec3(2.0f, 0.5f, -7.0f));
+
         model = glm::scale(model, glm::vec3(0.005f));
+        std::cout << glfwGetTime() << std::endl;
         // On remet a jour la variable globale du shader, en ajoutant de la lmuière spéculaire, la voiture reflète la lumière
         glUniform1f(specularStrength, 6.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));

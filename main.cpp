@@ -34,13 +34,14 @@ GLint DUREE_CYCLE(240);
 
 //Nombre d'îlots urbains à générer
 //ATTENTION TRES GOURMAND
-GLint nbIlots(5);
+GLint nbIlots(16);
 
 
 
 enum Type_Ilot{
     MAISONS1,
     MAISONS2,
+    MAISONS3,
     ARBRES1,
     ARBRES2,
     ARBRES3
@@ -71,7 +72,12 @@ int main()
     glViewport(0, 0, width, height);
     
     glEnable(GL_DEPTH_TEST);
-    glfwSwapInterval(1);
+    glfwSwapInterval(1);     //Force VSync
+
+    //On active le face culling pour une mailleure performance (cela permet de ne pas afficher les faces non
+    //visibles des polygones, et donc de ne pas faire les calculs coûteux de shader sur ces faces)
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
 
@@ -109,90 +115,31 @@ int main()
         /*     Positions    |      Normales     |     UV     */
         -500.0f,  0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1250.0f, // Top Left
         -500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
-         500.0f, -0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 1250.0f, // Top Right
-         500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 0.0f  // Bottom Right
+         500.0f,  0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 1250.0f, // Top Right
+         500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 0.0f,  // Bottom Right
+
+        -500.0f, -1.0f, -500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1250.0f, // Top Left
+        -500.0f, -1.0f,  500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
+         500.0f, -1.0f, -500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 1250.0f, // Top Right
+         500.0f, -1.0f,  500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 0.0f  // Bottom Right
     };
 
     GLshort indices[]{
         0, 1, 2,
-        1, 2, 3
+        1, 3, 2,
+        0, 4, 1,
+        1, 4, 5,
+        1, 5, 3,
+        5, 7, 3,
+        2, 3, 6,
+        3, 7, 6,
+        0, 2, 4,
+        2, 6, 4,
+        4, 6, 5,
+        6, 5, 7
     };
 
-    nbTriangles = 2;
-
-    
-
-    //Définition d'une grille pour pouvoir définir des altitudes
-    //Plus gourmand, donc non implémenté pour l'instant
-    //Pour l'implémenter, il suffira de décommenter le bloc suivant et de commenter
-    //la précédente définition de vertices et indices
-
-//    int deltaX = 50; //La grille fera une taille de 2*deltaX x 2*deltaZ (de -deltaX, -deltaZ à deltaX, deltaZ
-//    int deltaZ = 50;
-
-//    GLfloat altitude;
-//    float uStep = 1.25f;  //Pas des coordonnées UV
-//    float vStep = 1.25f;
-
-//    std::vector<GLfloat> verticesV;   //De type vector, afin de pouvoir allouer dynaiquement
-//    std::vector<GLshort> indicesV;
-
-//    for (int Z = -deltaZ; Z < deltaZ; Z++) {
-//        for (int X = -deltaX; X < deltaX; X++) {
-
-//            if(true){                 //Test pour l'instant inutile faute de conditions
-//                altitude = 0.0f;
-//            } else {
-//                altitude = 0.0f;
-//            }
-
-//            glm::vec3 vertex1(X, altitude, Z);       //Position
-//            glm::vec3 vertex2(X, altitude, Z+1);
-//            glm::vec3 vertex3(X+1, altitude, Z+1);
-
-//            glm::vec3 edge1 = vertex2 - vertex1;     //Normale
-//            glm::vec3 edge2 = vertex3 - vertex1;
-//            glm::vec3 normal = glm::cross(edge1, edge2);
-//            normal.normalize();
-
-//            verticesV.push_back(vertex1.x);
-//            verticesV.push_back(vertex1.y);
-//            verticesV.push_back(vertex1.z);
-
-//            verticesV.push_back(normal.x);
-//            verticesV.push_back(normal.y);
-//            verticesV.push_back(normal.z);
-
-//            verticesV.push_back(X * uStep);          //UV
-//            verticesV.push_back(Z * vStep);
-//        }
-//    }
-
-//    for (int i = 0; i < 4*deltaZ-1; i++) {          //Indices pour l'EBO
-//        for (int j = 0; j < 4*deltaX-1; j++) {
-//            indicesV.push_back(i * 2*deltaX + j);
-//            indicesV.push_back((i+1) * 2*deltaX + j);
-//            indicesV.push_back((i+1) * 2*deltaX + (j+1));
-
-//            indicesV.push_back((i+1) * 2*deltaX + (j+1));
-//            indicesV.push_back(i * 2*deltaX + (j+1));
-//            indicesV.push_back(i * 2*deltaX + j);
-//        }
-//    }
-
-//    nbTriangles = indicesV.size()/3;
-
-//    GLfloat vertices[verticesV.size()];    //Format utilisable par GLEW
-//    GLshort indices[indicesV.size()];
-
-//    for(int i(0); i<verticesV.size(); i++){
-//        vertices[i] = verticesV[i];
-//    }
-
-//    for(int i(0); i<indicesV.size(); i++){
-//        indices[i] = indicesV[i];
-//    }
-
+    nbTriangles = sizeof(indices)/3;
 
     GLuint VBO, VAO, EBO;
     
@@ -225,7 +172,7 @@ int main()
     glBindVertexArray(0);
 	
     Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
-    
+
     // On charge les modèles
     Model maison("model/House/house.obj");
     Model soleil("model/Sun/soleil.obj");
@@ -314,8 +261,10 @@ int main()
 
         if (prob < 35){
             typeIlot[i] = MAISONS1;
-        } else if (45 <= prob && prob < 75){
+        } else if (35 <= prob && prob < 55){
             typeIlot[i] = MAISONS2;
+        } else if (55 <= prob && prob < 75){
+            typeIlot[i] = MAISONS3;
         } else if (75 <= prob && prob < 84){
             typeIlot[i] = ARBRES1;
         } else if (84 <= prob && prob < 92){
@@ -459,7 +408,7 @@ int main()
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
         //Position utilisée plus tard pour le placement du modèle
-        glm::vec3 lmpPos(4.0f, 1.6f, -7.0f);
+        glm::vec3 lmpPos(0.0f, 1.6f, -4.0f);
         glUniform3f(lampPos, lmpPos.x, lmpPos.y , lmpPos.z);
 
 
@@ -557,7 +506,7 @@ int main()
 //        arbre2.Draw(shader);
 
 
-        // Nuages, non affectés pas la lumière des lampadaires
+        // Nuages, non affectés pas la lumière des lampadaires    GL_TEXTURE_MAX_ANISOTROPY_EXT = 1.0f;
         glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
         //On parcourt la liste initialisée anvant la rentrée dans la boucle while
         for(int i(0); i < nbNuages; i++){
@@ -594,7 +543,7 @@ int main()
 
         // Voiture
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(2.0f, 0.5f, -7.0f));
+        model = glm::translate(model, glm::vec3(1.5f, 0.5f, -3.0f));
 
         model = glm::scale(model, glm::vec3(0.005f));
         // On remet a jour la variable globale du shader, en ajoutant de la lmuière spéculaire, la voiture reflète la lumière
@@ -606,9 +555,10 @@ int main()
 
 
 
-        //Test îlots
+        //Dessin des îlots
+        GLint rotMais2(0);
         for(int i(0); i < nbIlots; i++){
-            if(true){
+            if(typeIlot[i]==MAISONS1){
                 //Dessin des maisons (en carré)
                 for (int house(0); house <10; house++){
                     if(house<3){ //Arête sud
@@ -616,20 +566,12 @@ int main()
                         model = glm::translate(model, glm::vec3(xIlot[i] - 10.0f + house*10.0f, 0.0f, zIlot[i] - 15.0f));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
-                        // On remet a jour la variable globale du shader
-                        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-                        // On redessine l’objet
-                        maison.Draw(shader);
 
                     } else if(3<=house && house<6){ //Arête nord
                         model = glm::mat4(1.0f);
                         model = glm::translate(model, glm::vec3(xIlot[i] - 10.0f + (house-3)*10.0f, 0.0f, zIlot[i] + 10.0f));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
-                        // On remet a jour la variable globale du shader
-                        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-                        // On redessine l’objet
-                        maison.Draw(shader);
 
                     } else if(6 <= house && house<8){ //Arête est
                         model = glm::mat4(1.0f);
@@ -637,10 +579,6 @@ int main()
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
-                        // On remet a jour la variable globale du shader
-                        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-                        // On redessine l’objet
-                        maison.Draw(shader);
 
                     } else { //Arête ouest
                         model = glm::mat4(1.0f);
@@ -648,11 +586,11 @@ int main()
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
-                        // On remet a jour la variable globale du shader
-                        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-                        // On redessine l’objet
-                        maison.Draw(shader);
                     }
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    maison.Draw(shader);
                 }
 
                 //Dessin des sapins
@@ -680,6 +618,55 @@ int main()
                         // On redessine l’objet
                         arbre2.Draw(shader);
                 }
+
+            } else{ //if(typeIlot[i]==MAISONS2){
+                    // Maisons
+                    // Maison1
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i] - 6.0f));
+                    model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                    model = glm::rotate(model, (GLfloat) (rotMais2*M_PI/2), glm::vec3( 0.0f, 0.0f, 1.0f));
+                    model = glm::scale(model, glm::vec3(0.1f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    maison.Draw(shader);
+
+                    // Maison2
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(xIlot[i]-6.0f, 0.0f, zIlot[i]+3.0f));
+                    model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                    model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
+                    model = glm::rotate(model, (GLfloat) (rotMais2*M_PI/2), glm::vec3(0.0f, 0.0f, 1.0f));
+                    model = glm::scale(model, glm::vec3(0.1f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    maison.Draw(shader);
+
+                    // Arbres
+                    // Sapin
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(xIlot[i]+2.0f, 0.0f, zIlot[i]+1.0f));
+                    model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                    model = glm::scale(model, glm::vec3(1.3f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    arbre1.Draw(shader);
+
+                    // Feuillu
+                    if((i + nbNuages)%4==0){
+                        model = glm::mat4(1.0f);
+                        model = glm::translate(model, glm::vec3(xIlot[i] + 6.0f, 0.0f, zIlot[i] + 5.0f));
+                        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                        model = glm::scale(model, glm::vec3(0.7f));
+                        // On remet a jour la variable globale du shader
+                        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                        // On redessine l’objet
+                        arbre2.Draw(shader);
+                    }
+                    rotMais2++;
             }
         }
 

@@ -27,20 +27,40 @@
 // Other Libs
 #include <SOIL/SOIL.h>
 
-// Properties
+
+// ------------------------- PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
+
+// Dimensions de la fenêtre, par défaut 1280 et 720
 GLuint screenWidth = 1280, screenHeight = 720;
 
+//Angles de la lumière à partir duquel on est en phase de crépuscule ou d'aube
+//A priori, à ne pas changer, valeurss par défaut 3*M_PI/5 et 4*M_PI/3
 GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 
-//Un cycle dure par défaut 240 secondes : 2 min de jour, 2 min de nuit
+//Durée du cycle jour/nuit. Par défaut 240 secondes : 2 min de jour, 2 min de nuit
 GLint DUREE_CYCLE(240);
 
-//Nombre d'îlots urbains à générer
+//Nombre d'îlots urbains à générer. Par défaut : 16
 //ATTENTION, GOURMAND
-GLint nbIlots(4);
+GLint nbIlots(16);
 
+//Probabilité d'apparition des différents types d'ilots. (la dernière est égale à 100 - la somme des autres
+//Par défaut : 35, 18, 22, 7, 8
+//Etant donné que les arbres sont gourmands, on minmisera leur probabilité (surtout arbres1, et maisons2)
+GLint probMaison1(35);
+GLint probMaison2(18);
+GLint probMaison3(22);
+GLint probArbre1(7);
+GLint probArbre2(8);
+// probArbre3 = 100 - (probMaison1 + probMaison2 + probMaison3 + probArbre1 + probArbre2)
+
+//Booléen concernant la présence de la Croutitower. S'il est true, elle apparaîtra forcément
+//Sinon, elle n'apparaîtra pas
 bool tower(true);
+
+
+//---------------- FIN DES PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
 
 
 enum Type_Ilot{
@@ -274,20 +294,25 @@ int main()
         GLint prob = rand()%101;
 
 
-        //... dont dépent le type de l'ilot courant
-        if (prob < 35){
+        //... dont dépend le type de l'ilot courant, les pourcentages sont déterminés au début du programme
+        //Ainsi en faisant las ome des autres probabilités, on obtient les valeur de l'intervalle de longueur la probabilité voulue
+        if (prob < probMaison1){
             typeIlot[i] = MAISONS1;
-        } else if (35 <= prob && prob < 55){
+        } else if (probMaison1 <= prob && prob < probMaison1 + probMaison2){
             typeIlot[i] = MAISONS2;
-        } else if (55 <= prob && prob < 75){
+        } else if (probMaison1 + probMaison2 <= prob
+                   && prob < probMaison1 + probMaison2 + probMaison3){
             typeIlot[i] = MAISONS3;
-        } else if (75 <= prob && prob < 84){
+        } else if (probMaison1 + probMaison2 + probMaison3 <= prob
+                   && prob < probMaison1 + probMaison2 + probMaison3 + probArbre1){
             typeIlot[i] = ARBRES1;
-        } else if (84 <= prob && prob < 92){
+        } else if (probMaison1 + probMaison2 + probMaison3 + probArbre1 <= prob
+                   && prob < probMaison1 + probMaison2 + probMaison3 + probArbre1 + probArbre2){
             typeIlot[i] = ARBRES2;
         } else{
             typeIlot[i] = ARBRES3;
         }
+
 
         // On force la création de la Croutitower à l'emplacement prévu
         if(tower && i==emplacement_tour){
@@ -562,6 +587,7 @@ int main()
         //Dessin des îlots
         GLint rotMais2(0);
         for(int i(0); i < nbIlots; i++){
+            //Un carré de maisons avec des arbres au milieu
             if(typeIlot[i]==MAISONS1){
                 //Dessin des maisons (en carré)
                 GLfloat x, y, z;
@@ -637,6 +663,8 @@ int main()
                 }
 
 
+
+            // 2 maisons en angle droit avec un sapin et éventuellement un feuillu
             } else if(typeIlot[i]==MAISONS2){
                     // Maisons
                     // Maison1
@@ -687,6 +715,7 @@ int main()
                     rotMais2++;
 
 
+            //La Croutitower
             } else if(typeIlot[i] == TOWER){
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]));
@@ -695,9 +724,95 @@ int main()
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                 // On redessine l’objet
                 croutitower.Draw(shader, frustum, xIlot[i], 35.0f, zIlot[i]);
-            }
-        }
 
+
+
+            // Trois rangées de maisons
+            } else if(typeIlot[i] == MAISONS3){
+                GLfloat x, y, z;
+                for (int house(0); house <9; house++){
+                    model = glm::mat4(1.0f);
+                    x = xIlot[i] - 10.0f + (house%3)*10.0f;
+                    y = 0.0f;
+                    z = zIlot[i] - 15.0f + floor(house/3)*12.5f;
+                    model = glm::translate(model, glm::vec3(x, y, z));
+                    model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                    model = glm::scale(model, glm::vec3(0.1f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    maison.Draw(shader, frustum, x, y, z);
+                }
+
+
+            // Un carré de sapins
+            } else if(typeIlot[i] == ARBRES1){
+                GLfloat x, y, z;
+                for (int tree(0); tree < 16; tree++){
+                    if(tree < 10){
+                        model = glm::mat4(1.0f);
+                        x = xIlot[i] - 13.0f + (tree%5)*6.5;
+                        y = 0.0f;
+                        z = zIlot[i] + pow(-1,floor(tree/5))*13.0f - 4.0f;
+                        model = glm::translate(model, glm::vec3(x, y, z));
+                        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                        model = glm::scale(model, glm::vec3(1.3f));
+                    } else{
+                        model = glm::mat4(1.0f);
+                        x = xIlot[i] + pow(-1,floor(tree/3))*13.0;
+                        y = 0.0f;
+                        z = zIlot[i] - 6.5f + (tree%3)*6.5 - 4.0f;
+                        model = glm::translate(model, glm::vec3(x, y, z));
+                        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                        model = glm::scale(model, glm::vec3(1.3f));
+                    }
+
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    arbre1.Draw(shader, frustum, x, y, z);
+                }
+
+
+            //4 sapins et une maison au centre
+            } else if(typeIlot[i] == ARBRES2){
+                GLfloat x, y, z;
+                for (int tree(0); tree < 4; tree++){
+                    model = glm::mat4(1.0f);
+                    x = xIlot[i] - 13.0f + (tree%2)*26;
+                    y = 0.0f;
+                    z = zIlot[i] + pow(-1,floor(tree/2))*13.0f - 4.0f;
+                    model = glm::translate(model, glm::vec3(x, y, z));
+                    model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                    model = glm::scale(model, glm::vec3(1.3f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    arbre1.Draw(shader, frustum, x, y, z);
+                }
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i] -3.0f));
+                model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                model = glm::scale(model, glm::vec3(0.1f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet
+                maison.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i] - 3.0f);
+
+
+            //Un arbre géant
+            } else{
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]-5.0f));
+                model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
+                model = glm::scale(model, glm::vec3(1.4f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet
+                arbre2.Draw(shader, frustum, xIlot[i], 4.0f, zIlot[i]-5.0f);
+            }
+
+        }
 
 
 

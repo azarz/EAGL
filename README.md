@@ -1,7 +1,7 @@
 ﻿# EAGL
 
-Emulsion Artistique en openGL
-or
+Emulsion Artistique en openGL \n
+or \n
 Especially Artistic usage of openGL
 
 Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli

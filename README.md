@@ -18,9 +18,19 @@ Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli
 
 ## COMMENT UTILISER ?
 
-Pour se déplacer, utiliser les **flèches directionnelles ou ZQSD** et la souris.
+### Compilation
+Se placer dans le dossier EAGL à l'aide d'un terminal.
+Lancer la commande
+<blockquote>cmake .</blockquote>
+Une fois terminée, lancer la commande
+<blockquote>make</blockquote>
+L'exécutable devrait se trouver dans le dossier EAGL
+
+### Utilisation
+Lancer l'exécutable situé dans le dossier EAGL.  
+Pour se déplacer, utiliser les **flèches directionnelles ou ZQSD** et la souris.  
 Pour changer de type de caméra, appuyer sur la **barre d'espace**.
 
-Les principaux paramètres modifiables du programme se situent **en haut de main.cpp**.
+Les principaux paramètres modifiables du programme se situent **en haut de main.cpp**. **(RECOMPILATION NÉCESSAIRE)**
 
 Les diverses classes et l'implémentation du View Frustum Culling (permettant de ne pas afficher les objets se situant hors du cône de vision, et d'augmenter très significativement les performances) proviennent du site Lighthouse3d http://www.lighthouse3d.com/tutorials/view-frustum-culling/, elles ont ensuite été modifiées pour être adaptées à notre programme.

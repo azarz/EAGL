@@ -7,10 +7,10 @@ Especially Artistic usage of openGL
 Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli
 
 ## Modules implémentés
-Lumière dynamique : 					      100%
-Caméra réaliste :                   100% (changement de mode en appuyant sur la barre d'espace)
-Génération aléatoire du monde :     100% (paramétrisation en haut de main.cpp)
-Mouvements planifiés :              33% (Nuages, soleil, navette impériale)
+Lumière dynamique : 					      100%  
+Caméra réaliste :                   100% (changement de mode en appuyant sur la barre d'espace)  
+Génération aléatoire du monde :     100% (paramétrisation en haut de main.cpp)  
+Mouvements planifiés :              33% (Nuages, soleil, navette impériale)  
 
 ## COMMENT UTILISER ?
 

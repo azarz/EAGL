@@ -38,8 +38,9 @@ GLint DUREE_CYCLE(240);
 
 //Nombre d'îlots urbains à générer
 //ATTENTION, GOURMAND
-GLint nbIlots(16);
+GLint nbIlots(4);
 
+bool tower(true);
 
 
 enum Type_Ilot{
@@ -48,7 +49,8 @@ enum Type_Ilot{
     MAISONS3,
     ARBRES1,
     ARBRES2,
-    ARBRES3
+    ARBRES3,
+    TOWER
 };
 
 
@@ -178,8 +180,9 @@ int main()
     Model arbre1("model/Trees/Tree1/Tree1.3ds", 4.0f);
     Model arbre2("model/Trees/Tree2/Tree2.3ds", 4.0f);
     Model cloud("model/Cloud/nuage2.obj", 4.0f);
-    Model shuttle("model/Shuttle/tyderium.obj", 100.0f);
+    Model shuttle("model/Shuttle/tyderium.obj", 25.0f);
     Model car("model/Car/car.obj", 2.0f);
+    Model croutitower("model/Croutitower/croutitower.obj", 45.0f);
 
 
     //Initialisation des nuages
@@ -205,6 +208,19 @@ int main()
     GLfloat zIlot[nbIlots];
     Type_Ilot typeIlot[nbIlots];
     GLint intervalle(34);       //intervalle entre 2 centres d'îlots
+    int emplacement_tour(0);
+
+
+    //Pour sécurité : on peut rentrer un nombre d'ilots nuls
+    if (nbIlots == 0){
+        tower = false;
+    }
+
+
+    //On sélectionne l'emplacement de la Croutitower
+    if(tower){
+        emplacement_tour = rand()%nbIlots;
+    }
 
     //Positions des centres d'ilot, et type d'ilot déterminé aléatoirement
     for(int i(0); i < nbIlots; i++){
@@ -254,8 +270,11 @@ int main()
         }
 
 
+        //Détermination d'un pourcentage aléatoire...
         GLint prob = rand()%101;
 
+
+        //... dont dépent le type de l'ilot courant
         if (prob < 35){
             typeIlot[i] = MAISONS1;
         } else if (35 <= prob && prob < 55){
@@ -268,6 +287,11 @@ int main()
             typeIlot[i] = ARBRES2;
         } else{
             typeIlot[i] = ARBRES3;
+        }
+
+        // On force la création de la Croutitower à l'emplacement prévu
+        if(tower && i==emplacement_tour){
+            typeIlot[i] = TOWER;
         }
 
     }
@@ -442,6 +466,9 @@ int main()
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
 
 
+
+
+
         //Lampadaire
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(lmpPos.x, 0.0f, lmpPos.z));
@@ -464,7 +491,10 @@ int main()
         }
 
 
-        // Nuages, non affectés pas la lumière des lampadaires    GL_TEXTURE_MAX_ANISOTROPY_EXT = 1.0f;
+
+
+
+        // Nuages, non affectés pas la lumière des lampadaires
         glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
         //On parcourt la liste initialisée anvant la rentrée dans la boucle while
         for(int i(0); i < nbNuages; i++){
@@ -481,22 +511,38 @@ int main()
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
 
+
+
+
         // Navette Impériale
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 15.0f, 15.0f));
         glm::mat4 rot2;
         rot2 = glm::rotate(rot2, 80.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         model = model*rot2;
-        //mouvement circulaire
+
+        //Mouvement circulaire
         glm::mat4 rot3;
         rot3 = glm::rotate(rot3, -angle*20, glm::vec3(0.0f, 1.0f, 0.0f));
         model=rot3*model;
 
+        GLfloat xNav(0.0f);
+        GLfloat zNav(0.0f);
+
+        //Si la Croutitower est présente, la navette tourne autour
+        if(tower){
+            xNav = xIlot[emplacement_tour];
+            zNav = zIlot[emplacement_tour];
+            model = glm::translate(model, glm::vec3(xNav, 0.0f, zNav));
+        }
         model = glm::scale(model, glm::vec3(0.004f));
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
-        shuttle.Draw(shader, frustum, 0.0f, 15.0f, 15.0f);
+        shuttle.Draw(shader, frustum, zNav, 15.0f, xNav);
+
+
+
 
 
         // Voiture
@@ -590,7 +636,8 @@ int main()
                         arbre2.Draw(shader, frustum, xIlot[i] +1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7, 0.0f, zIlot[i] + (i%3)*0.5f - 5.0f + (tree*i)%3);
                 }
 
-            } else{ //if(typeIlot[i]==MAISONS2){
+
+            } else if(typeIlot[i]==MAISONS2){
                     // Maisons
                     // Maison1
                     model = glm::mat4(1.0f);
@@ -638,6 +685,16 @@ int main()
                         arbre2.Draw(shader, frustum, xIlot[i] + 6.0f, 0.0f, zIlot[i] + 5.0f);
                     }
                     rotMais2++;
+
+
+            } else if(typeIlot[i] == TOWER){
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]));
+                model = glm::scale(model, glm::vec3(80.0f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet
+                croutitower.Draw(shader, frustum, xIlot[i], 35.0f, zIlot[i]);
             }
         }
 

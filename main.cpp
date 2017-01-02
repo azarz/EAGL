@@ -3,6 +3,7 @@
 #include <vector>
 #include <ctime>
 #include <iostream>
+#include <map>
 
 // GLEW
 #include <GL/glew.h>
@@ -14,6 +15,9 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Model.h"
+#include "Vec3.h"
+#include "FrustumG.h"
+
 
 // GLM Mathemtics
 #include <glm/glm.hpp>
@@ -33,7 +37,7 @@ GLfloat ANGLE_AUBE(4*M_PI/3);
 GLint DUREE_CYCLE(240);
 
 //Nombre d'îlots urbains à générer
-//ATTENTION TRES GOURMAND
+//ATTENTION, GOURMAND
 GLint nbIlots(16);
 
 
@@ -110,33 +114,18 @@ int main()
 	
     GLint nbTriangles;
 
-    //Définition du sol, carré allant de -50,-50 à 50,50
+    //Définition du sol, carré allant de -500,-500 à 500 ,500
     GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
         -500.0f,  0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1250.0f, // Top Left
         -500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
          500.0f,  0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 1250.0f, // Top Right
          500.0f,  0.0f,  500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 0.0f,  // Bottom Right
-
-        -500.0f, -1.0f, -500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1250.0f, // Top Left
-        -500.0f, -1.0f,  500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f, // Bottom Left
-         500.0f, -1.0f, -500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 1250.0f, // Top Right
-         500.0f, -1.0f,  500.0f,   0.0f, 1.0f, 0.0f,   1250.0f, 0.0f  // Bottom Right
     };
 
     GLshort indices[]{
         0, 1, 2,
         1, 3, 2,
-        0, 4, 1,
-        1, 4, 5,
-        1, 5, 3,
-        5, 7, 3,
-        2, 3, 6,
-        3, 7, 6,
-        0, 2, 4,
-        2, 6, 4,
-        4, 6, 5,
-        6, 5, 7
     };
 
     nbTriangles = sizeof(indices)/3;
@@ -173,16 +162,24 @@ int main()
 	
     Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
 
-    // On charge les modèles
-    Model maison("model/House/house.obj");
-    Model soleil("model/Sun/soleil.obj");
-    Model lamp("model/Lamp/Lamp.obj");
-    Model lit_lamp("model/Lamp/litLamp/Lamp.obj");
-    Model arbre1("model/Trees/Tree1/Tree1.3ds");
-    Model arbre2("model/Trees/Tree2/Tree2.3ds");
-    Model cloud("model/Cloud/nuage2.obj");
-    Model shuttle("model/Shuttle/tyderium.obj");
-    Model car("model/Car/car.obj");
+
+    //On initialise notre frustum (cône) (classe FrustumG du tutoriel du site lighthouse3D) pour réaliser du view frustum culling,
+    //C'est à dire que l'on évite de faire le rendu des objets qui ne sont pas à l'écran. Cela améliore grandement la performance.
+    FrustumG frustum;
+    frustum.setCamInternals(60.0f, (float)screenWidth/(float)screenHeight, 0.1f, 350.0f);
+
+
+    // On charge les modèles, avec le rayon de la sphère à tester pour le frustum culling
+    // Si cette sphère est dans le cône de vison, ou l'intersecte, on dessine l'objet
+    Model maison("model/House/house.obj", 7.5f);
+    Model soleil("model/Sun/soleil.obj", 350.0f);
+    Model lamp("model/Lamp/Lamp.obj", 3.0f);
+    Model lit_lamp("model/Lamp/litLamp/Lamp.obj", 3.0f);
+    Model arbre1("model/Trees/Tree1/Tree1.3ds", 4.0f);
+    Model arbre2("model/Trees/Tree2/Tree2.3ds", 4.0f);
+    Model cloud("model/Cloud/nuage2.obj", 4.0f);
+    Model shuttle("model/Shuttle/tyderium.obj", 100.0f);
+    Model car("model/Car/car.obj", 2.0f);
 
 
     //Initialisation des nuages
@@ -283,6 +280,11 @@ int main()
         camera.Do_Movement();
         //Fonction permettant de changer de mode de caméra, appelée si la barre espace est enfoncée
         camera.Switch_Mode();
+
+        //Après le mouvement, on met à jour le cône de vision
+        frustum.setCamDef(Vec3(camera.Position.x, camera.Position.y, camera.Position.z),
+                          Vec3(camera.Position.x + camera.Front.x ,camera.Position.y + camera.Front.y ,camera.Position.z + camera.Front.z),
+                          Vec3(camera.Up.x, camera.Up.y, camera.Up.z));
 
         //Récupération de la position de la vue, pour la lumière spéculaire
         glUniform3f(glGetUniformLocation(shader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
@@ -433,7 +435,7 @@ int main()
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         // On redessine l’objet
-        soleil.Draw(shader);
+        soleil.Draw(shader, frustum, 0.0f, 0.0f, 0.0f);
         //on repasse au variables de shader normales
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
         glUniform1f(ambientStrength, ambStr);
@@ -453,57 +455,13 @@ int main()
             glUniform1f(ambientStrength, 0.7f);
             glUniform3f(lightColor, lmpColor.x, lmpColor.y, lmpColor.z);
 
-            lit_lamp.Draw(shader);
+            lit_lamp.Draw(shader, frustum, lmpPos.x, 0.0f, lmpPos.z);
             //on repasse au variables de shader normales
             glUniform1f(ambientStrength, ambStr);
             glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
         } else{
-            lamp.Draw(shader);
+            lamp.Draw(shader, frustum, lmpPos.x, 0.0f, lmpPos.z);
         }
-
-//        // Maisons
-//        // Maison1
-//        model = glm::mat4(1.0f);
-//        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -10.0f));
-//        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
-//        model = glm::scale(model, glm::vec3(0.1f));
-//        // On remet a jour la variable globale du shader
-//        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-//        // On redessine l’objet
-//        maison.Draw(shader);
-
-//        // Maison2
-//        model = glm::mat4(1.0f);
-//        model = glm::translate(model, glm::vec3(-6.0f, 0.0f, -4.0f));
-//        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
-//        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
-//        model = glm::scale(model, glm::vec3(0.1f));
-//        // On remet a jour la variable globale du shader
-//        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-//        // On redessine l’objet
-//        maison.Draw(shader);
-
-
-//        // Arbres
-//        // Arbre1
-//        model = glm::mat4(1.0f);
-//        model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 3.0f));
-//        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
-//        model = glm::scale(model, glm::vec3(1.3f));
-//        // On remet a jour la variable globale du shader
-//        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-//        // On redessine l’objet
-//        arbre1.Draw(shader);
-
-//        // Arbre2
-//        model = glm::mat4(1.0f);
-//        model = glm::translate(model, glm::vec3(6.0f, 0.0f, -3.0f));
-//        model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
-//        model = glm::scale(model, glm::vec3(0.7f));
-//        // On remet a jour la variable globale du shader
-//        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-//        // On redessine l’objet
-//        arbre2.Draw(shader);
 
 
         // Nuages, non affectés pas la lumière des lampadaires    GL_TEXTURE_MAX_ANISOTROPY_EXT = 1.0f;
@@ -518,7 +476,7 @@ int main()
             // On remet a jour la variable globale du shader
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             // On redessine l’objet
-            cloud.Draw(shader);
+            cloud.Draw(shader, frustum, glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500, 30.0f, zNua[i]);
         }
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
@@ -538,7 +496,7 @@ int main()
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
-        shuttle.Draw(shader);
+        shuttle.Draw(shader, frustum, 0.0f, 15.0f, 15.0f);
 
 
         // Voiture
@@ -550,7 +508,7 @@ int main()
         glUniform1f(specularStrength, 6.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
-        car.Draw(shader);
+        car.Draw(shader, frustum, 1.5f, 0.5f, -3.0f);
         glUniform1f(specularStrength, specStr);
 
 
@@ -560,29 +518,42 @@ int main()
         for(int i(0); i < nbIlots; i++){
             if(typeIlot[i]==MAISONS1){
                 //Dessin des maisons (en carré)
+                GLfloat x, y, z;
                 for (int house(0); house <10; house++){
                     if(house<3){ //Arête sud
                         model = glm::mat4(1.0f);
-                        model = glm::translate(model, glm::vec3(xIlot[i] - 10.0f + house*10.0f, 0.0f, zIlot[i] - 15.0f));
+                        x = xIlot[i] - 10.0f + house*10.0f;
+                        y = 0.0f;
+                        z = zIlot[i] - 15.0f;
+                        model = glm::translate(model, glm::vec3(x, y, z));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
 
                     } else if(3<=house && house<6){ //Arête nord
                         model = glm::mat4(1.0f);
-                        model = glm::translate(model, glm::vec3(xIlot[i] - 10.0f + (house-3)*10.0f, 0.0f, zIlot[i] + 10.0f));
+                        x = xIlot[i] - 10.0f + (house-3)*10.0f;
+                        y = 0.0f;
+                        z = zIlot[i] + 10.0f;
+                        model = glm::translate(model, glm::vec3(x, y, z));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
 
                     } else if(6 <= house && house<8){ //Arête est
                         model = glm::mat4(1.0f);
-                        model = glm::translate(model, glm::vec3(xIlot[i] + 14.2f, 0.0f, zIlot[i] + 1.25f - (house-6)*10.0f ));
+                        x = xIlot[i] + 14.2f;
+                        y = 0.0f;
+                        z = zIlot[i] + 1.25f - (house-6)*10.0f;
+                        model = glm::translate(model, glm::vec3(x, y, z));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
 
                     } else { //Arête ouest
                         model = glm::mat4(1.0f);
-                        model = glm::translate(model, glm::vec3(xIlot[i] - 11.0f, 0.0f, zIlot[i] + 1.25f - (house-8)*10.0f ));
+                        x = xIlot[i] - 11.0f;
+                        y = 0.0f;
+                        z = zIlot[i] + 1.25f - (house-8)*10.0f;
+                        model = glm::translate(model, glm::vec3(x, y, z));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3( 0.0f, 0.0f, 1.0f));
                         model = glm::scale(model, glm::vec3(0.1f));
@@ -590,7 +561,7 @@ int main()
                     // On remet a jour la variable globale du shader
                     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                     // On redessine l’objet
-                    maison.Draw(shader);
+                    maison.Draw(shader, frustum, x, y, z);
                 }
 
                 //Dessin des sapins
@@ -603,7 +574,7 @@ int main()
                         // On remet a jour la variable globale du shader
                         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                         // On redessine l’objet
-                        arbre1.Draw(shader);
+                        arbre1.Draw(shader, frustum, xIlot[i] + pow(-1,tree)*(i%4 +1)*1.5f + (tree*i)%3*1.4, 0.0f, zIlot[i] + pow(-1,tree)*(i%3 + 1)*tree - 3.0f + pow(-1,i)*(tree%3)*0.8);
                 }
 
                 //Dessin des feuillus
@@ -616,7 +587,7 @@ int main()
                         // On remet a jour la variable globale du shader
                         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                         // On redessine l’objet
-                        arbre2.Draw(shader);
+                        arbre2.Draw(shader, frustum, xIlot[i] +1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7, 0.0f, zIlot[i] + (i%3)*0.5f - 5.0f + (tree*i)%3);
                 }
 
             } else{ //if(typeIlot[i]==MAISONS2){
@@ -630,7 +601,7 @@ int main()
                     // On remet a jour la variable globale du shader
                     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                     // On redessine l’objet
-                    maison.Draw(shader);
+                    maison.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i] - 6.0f);
 
                     // Maison2
                     model = glm::mat4(1.0f);
@@ -642,7 +613,7 @@ int main()
                     // On remet a jour la variable globale du shader
                     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                     // On redessine l’objet
-                    maison.Draw(shader);
+                    maison.Draw(shader, frustum, xIlot[i]-6.0f, 0.0f, zIlot[i]+3.0f);
 
                     // Arbres
                     // Sapin
@@ -653,7 +624,7 @@ int main()
                     // On remet a jour la variable globale du shader
                     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                     // On redessine l’objet
-                    arbre1.Draw(shader);
+                    arbre1.Draw(shader, frustum, xIlot[i]+2.0f, 0.0f, zIlot[i]+1.0f);
 
                     // Feuillu
                     if((i + nbNuages)%4==0){
@@ -664,7 +635,7 @@ int main()
                         // On remet a jour la variable globale du shader
                         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                         // On redessine l’objet
-                        arbre2.Draw(shader);
+                        arbre2.Draw(shader, frustum, xIlot[i] + 6.0f, 0.0f, zIlot[i] + 5.0f);
                     }
                     rotMais2++;
             }

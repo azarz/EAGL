@@ -36,10 +36,14 @@ add_definitions(
 	-D_CRT_SECURE_NO_WARNINGS
 )
 
-# Tutorial 1
+# EAGL
 add_executable(EAGL 
 	main.cpp
 	src/Shader.cpp
+	src/AABox.cpp
+	src/FrustumG.cpp
+	src/Plane.cpp
+	src/Vec3.cpp
 	shaders/default.vertexshader
 	shaders/default.fragmentshader
 )

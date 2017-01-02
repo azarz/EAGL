@@ -17,6 +17,8 @@ using namespace std;
 #include <assimp/postprocess.h>
 
 #include "Mesh.h"
+#include "Vec3.h"
+#include "FrustumG.h"
 
 GLint TextureFromFile(const char* path, string directory);
 
@@ -25,16 +27,20 @@ class Model
 public:
     /*  Functions   */
     // Constructor, expects a filepath to a 3D model.
-    Model(std::string path)
+    Model(std::string path, float radius)
     {
         this->loadModel(path);
+        this->radius = radius;
     }
     
     // Draws the model, and thus all its meshes
-    void Draw(Shader shader)
+    void Draw(Shader shader, FrustumG frustum, GLfloat x, GLfloat y, GLfloat z)
     {
-        for(GLuint i = 0; i < this->meshes.size(); i++)
-            this->meshes[i].Draw(shader);
+        // On ne dessine le modèle que si la sphère associée n'est pas à l'extérieur du cône de vision
+        if(frustum.sphereInFrustum(Vec3(x,y,z), this->radius) != FrustumG::OUTSIDE){
+            for(GLuint i = 0; i < this->meshes.size(); i++)
+                this->meshes[i].Draw(shader);
+        }
     }
     
 private:
@@ -42,7 +48,8 @@ private:
     vector<Mesh> meshes;
     string directory;
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    
+    float radius;
+
     /*  Functions   */
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string path)

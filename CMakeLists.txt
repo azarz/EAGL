@@ -40,7 +40,6 @@ add_definitions(
 add_executable(EAGL 
 	main.cpp
 	src/Shader.cpp
-	src/AABox.cpp
 	src/FrustumG.cpp
 	src/Plane.cpp
 	src/Vec3.cpp

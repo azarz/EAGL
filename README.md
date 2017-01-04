@@ -33,4 +33,4 @@ Pour changer de type de caméra, appuyer sur la **barre d'espace**.
 
 Les principaux paramètres modifiables du programme se situent **en haut de main.cpp**. **(RECOMPILATION NÉCESSAIRE)**
 
-Les diverses classes et l'implémentation du View Frustum Culling (permettant de ne pas afficher les objets se situant hors du cône de vision, et d'augmenter très significativement les performances) proviennent du site Lighthouse3d http://www.lighthouse3d.com/tutorials/view-frustum-culling/, elles ont ensuite été modifiées pour être adaptées à notre programme.
+Les diverses classes et l'implémentation du View Frustum Culling (permettant de ne pas afficher les objets se situant hors du cône de vision, et d'augmenter très significativement les performances) proviennent du site Lighthouse3d http://www.lighthouse3d.com/tutorials/view-frustum-culling/, elles ont ensuite été modifiées pour être intégrées à notre programme dans ses différentes classes.

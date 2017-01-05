@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd beton.png
+map_Kd beton.png 
 
 newmtl Material.004
 Ns 96.078431
@@ -23,6 +23,7 @@ d 1.000000
 illum 2
 map_Kd glass.png
 
+
 newmtl Material.005
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
@@ -31,5 +32,5 @@ Ks 0.500000 0.500000 0.500000
 Ke 0.560000 0.560000 0.560000
 Ni 1.000000
 d 1.000000
-illum 2
+illum 0
 map_Kd Logo_Vertigéo2.png

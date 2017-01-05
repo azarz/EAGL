@@ -198,12 +198,14 @@ int main()
     Model lamp("model/Lamp/Lamp.obj", 3.0f);
     Model lit_lamp("model/Lamp/litLamp/Lamp.obj", 3.0f);
     Model arbre1("model/Trees/Tree1/Tree1.3ds", 4.0f);
-    Model arbre2("model/Trees/Tree2/Tree2.3ds", 4.0f);
-    Model cloud("model/Cloud/nuage2.obj", 4.0f);
-    Model shuttle("model/Shuttle/tyderium.obj", 25.0f);
+    Model arbre2("model/Trees/Tree2/Tree2.3ds", 9.0f);
+    Model cloud("model/Cloud/nuage2.obj", 6.0f);
+    Model shuttle("model/Shuttle/tyderium.obj", 40.0f);
     Model car("model/Car/car.obj", 2.0f);
     Model croutitower("model/Croutitower/croutitower.obj", 45.0f);
-
+    Model grass("model/Grass/herbe2.obj", 25.0f);
+    Model road("model/Road/route3.obj",22.0f);
+    Model road2("model/Road/route3-2.obj",20.0f);
 
     //Initialisation des nuages
     GLfloat vitesseNuages;
@@ -541,10 +543,8 @@ int main()
 
         // Navette Impériale
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 15.0f, 15.0f));
-        glm::mat4 rot2;
-        rot2 = glm::rotate(rot2, 80.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        model = model*rot2;
+        model = glm::translate(model, glm::vec3(0.0f, 40.0f, 18.0f));
+        model = glm::rotate(model, -(GLfloat)M_PI/2, glm::vec3(0.0f, 1.0f, 0.0f));
 
         //Mouvement circulaire
         glm::mat4 rot3;
@@ -554,17 +554,19 @@ int main()
         GLfloat xNav(0.0f);
         GLfloat zNav(0.0f);
 
-        //Si la Croutitower est présente, la navette tourne autour
+        //Si la Croutitower est présente, la navette lui tourne autour
         if(tower){
             xNav = xIlot[emplacement_tour];
             zNav = zIlot[emplacement_tour];
-            model = glm::translate(model, glm::vec3(xNav, 0.0f, zNav));
+            glm::mat4 transl;
+            transl = glm::translate(transl, glm::vec3(xNav, 0.0f, zNav));
+            model = transl*model;
         }
-        model = glm::scale(model, glm::vec3(0.004f));
+        model = glm::scale(model, glm::vec3(0.008f));
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         // On redessine l’objet
-        shuttle.Draw(shader, frustum, zNav, 15.0f, xNav);
+        shuttle.Draw(shader, frustum, xNav, 40.0f, zNav);
 
 
 
@@ -572,9 +574,9 @@ int main()
 
         // Voiture
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(1.5f, 0.5f, -3.0f));
+        model = glm::translate(model, glm::vec3(1.0f, 0.5f, -3.0f));
 
-        model = glm::scale(model, glm::vec3(0.005f));
+        model = glm::scale(model, glm::vec3(0.004f));
         // On remet a jour la variable globale du shader, en ajoutant de la lmuière spéculaire, la voiture reflète la lumière
         glUniform1f(specularStrength, 6.0f);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -718,12 +720,12 @@ int main()
             //La Croutitower
             } else if(typeIlot[i] == TOWER){
                 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]));
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]-4.0f));
                 model = glm::scale(model, glm::vec3(80.0f));
                 // On remet a jour la variable globale du shader
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                 // On redessine l’objet
-                croutitower.Draw(shader, frustum, xIlot[i], 35.0f, zIlot[i]);
+                croutitower.Draw(shader, frustum, xIlot[i], 35.0f, zIlot[i]-3.0f);
 
 
 
@@ -773,6 +775,16 @@ int main()
                     arbre1.Draw(shader, frustum, x, y, z);
                 }
 
+                //De l'herbe en dessous
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet (qui ne reflète pas la lumière, c'est de l'herbe)
+                glUniform1f(specularStrength, 0.0f);
+                grass.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i]-4.0f);
+                glUniform1f(specularStrength, specStr);
+
 
             //4 sapins et une maison au centre
             } else if(typeIlot[i] == ARBRES2){
@@ -799,6 +811,17 @@ int main()
                 // On redessine l’objet
                 maison.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i] - 3.0f);
 
+                //De l'herbe en dessous
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet (qui ne reflète pas la lumière, c'est de l'herbe)
+                glUniform1f(specularStrength, 0.0f);
+                grass.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i]-4.0f);
+                glUniform1f(specularStrength, specStr);
+
+
 
             //Un arbre géant
             } else{
@@ -810,9 +833,39 @@ int main()
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                 // On redessine l’objet
                 arbre2.Draw(shader, frustum, xIlot[i], 4.0f, zIlot[i]-5.0f);
+
+                //De l'herbe en dessous
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet (qui ne reflète pas la lumière, c'est de l'herbe)
+                glUniform1f(specularStrength, 0.0f);
+                grass.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i]-4.0f);
+                glUniform1f(specularStrength, specStr);
             }
 
-        }
+
+            //Dessin des routes
+            for(int signe=-1; signe < 2; signe+=2){
+                //Routes Est-Ouest
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f +signe*16.1f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet
+                road.Draw(shader, frustum, xIlot[i], 0.01f, zIlot[i]-4.0f +signe*16.1f);
+
+                //Routes Nord-Sud
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i]+ signe*16.1f, 0.01f, zIlot[i]-4.0f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // On redessine l’objet
+                road2.Draw(shader, frustum, xIlot[i]+ signe*16.55f, 0.01f, zIlot[i]-4.0f);
+            }
+
+        } //Fin de dessin des ilots
 
 
 

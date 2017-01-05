@@ -2,6 +2,8 @@
 
  View Frustum - Lighthouse3D
 
+ Class used for the frustum culling
+ 
   -----------------------------------------------------*/
 
 
@@ -19,12 +21,6 @@ class Vec3;
 #endif
 
 class Plane;
-
-#ifndef _AABOX_
-#include "AABox.h"
-#endif
-
-class AABox;
 
 
 

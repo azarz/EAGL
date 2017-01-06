@@ -203,7 +203,7 @@ int main()
     Model shuttle("model/Shuttle/tyderium.obj", 40.0f);
     Model car("model/Car/car.obj", 2.0f);
     Model croutitower("model/Croutitower/croutitower.obj", 45.0f);
-    Model grass("model/Grass/herbe2.obj", 25.0f);
+    Model grass("model/Grass/jardin4.obj", 25.0f);
     Model road("model/Road/route3.obj",22.0f);
     Model road2("model/Road/route3-2.obj",20.0f);
 
@@ -775,7 +775,7 @@ int main()
                     arbre1.Draw(shader, frustum, x, y, z);
                 }
 
-                //De l'herbe en dessous
+                //De l'herbe en dessous et une clôture
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f));
                 // On remet a jour la variable globale du shader
@@ -811,7 +811,7 @@ int main()
                 // On redessine l’objet
                 maison.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i] - 3.0f);
 
-                //De l'herbe en dessous
+                //De l'herbe en dessous et une clôture
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f));
                 // On remet a jour la variable globale du shader
@@ -834,7 +834,7 @@ int main()
                 // On redessine l’objet
                 arbre2.Draw(shader, frustum, xIlot[i], 4.0f, zIlot[i]-5.0f);
 
-                //De l'herbe en dessous
+                //De l'herbe en dessous et une clôture
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(xIlot[i], 0.01f, zIlot[i]-4.0f));
                 // On remet a jour la variable globale du shader

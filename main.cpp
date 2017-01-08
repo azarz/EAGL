@@ -329,7 +329,7 @@ int main()
 
 
 
-    //Pour sécurité, on limite le nombre de voitures au nombre d'ilots, car leur position initiale dépend des îlots
+    //Pour sécurité, on limite le nombre de voitures au nombre d'ilots, car leur position initiale dépend des ilots
     if(nbVoitures > nbIlots){
         nbVoitures = nbIlots;
     }
@@ -493,6 +493,10 @@ int main()
         glm::vec3 lmpPos(0.0f, 1.6f, -4.0f);
         glUniform3f(lampPos, lmpPos.x, lmpPos.y , lmpPos.z);
 
+
+
+
+        //DESSIN
 
         // On dessine le sol
         glDrawElements(GL_TRIANGLES, 3*nbTriangles, GL_UNSIGNED_SHORT, 0);

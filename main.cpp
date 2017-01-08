@@ -29,12 +29,11 @@
 
 
 // ------------------------- PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
-
 // Dimensions de la fenêtre, par défaut 1280 et 720
 GLuint screenWidth = 1280, screenHeight = 720;
 
 //Angles de la lumière à partir duquel on est en phase de crépuscule ou d'aube
-//A priori, à ne pas changer, valeurss par défaut 3*M_PI/5 et 4*M_PI/3
+//A priori, à ne pas changer, valeurs par défaut 3*M_PI/5 et 4*M_PI/3
 GLfloat ANGLE_CREPUSC(3*M_PI/5);
 GLfloat ANGLE_AUBE(4*M_PI/3);
 
@@ -42,7 +41,8 @@ GLfloat ANGLE_AUBE(4*M_PI/3);
 GLint DUREE_CYCLE(240);
 
 //Nombre d'îlots urbains à générer. Par défaut : 16
-//ATTENTION, GOURMAND
+//Valeurs pour avoir un carré sans trous : les carrés de nombres pairs
+//ATTENTION, GOURMAND (surtout au delà de 60)
 GLint nbIlots(16);
 
 //Probabilité d'apparition des différents types d'ilots. (la dernière est égale à 100 - la somme des autres
@@ -56,9 +56,14 @@ GLint probArbre2(8);
 // probArbre3 = 100 - (probMaison1 + probMaison2 + probMaison3 + probArbre1 + probArbre2)
 
 //Booléen concernant la présence de la Croutitower. S'il est true, elle apparaîtra forcément
-//Sinon, elle n'apparaîtra pas
+//Sinon, elle n'apparaîtra pas. Par défaut true
 bool tower(true);
 
+//Vitesse des voitures, par défaut 6.0f
+GLfloat car_speed(6.0f);
+
+//Nombre de voitures inférieur ou égal au nombre d'îlots, par défaut 3
+GLint nbVoitures(20);
 
 //---------------- FIN DES PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
 
@@ -136,7 +141,7 @@ int main()
 	
     GLint nbTriangles;
 
-    //Définition du sol, carré allant de -500,-500 à 500 ,500
+    //Définition du sol, carré allant de -500, -500 à 500, 500
     GLfloat vertices[] = {
         /*     Positions    |      Normales     |     UV     */
         -500.0f,  0.0f, -500.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1250.0f, // Top Left
@@ -211,7 +216,7 @@ int main()
     GLfloat vitesseNuages;
     GLint nbNuages;
     srand(std::time(NULL)); //Initialise la seed de manière différente à chaque lancement du programme
-    vitesseNuages = rand()%51/5; //Vitesse des nuages, entre 0 et 5 écrans/s
+    vitesseNuages = rand()%51/5; //Vitesse des nuages, entre 0 et 10 écrans/s
     nbNuages = rand()%501; //Nombre de nuages, entre 0 et 500
 
     GLfloat xNua[nbNuages];
@@ -224,7 +229,6 @@ int main()
     }
 
 
-
     //Initialisation des ilots:
     GLfloat xIlot[nbIlots];
     GLfloat zIlot[nbIlots];
@@ -232,8 +236,7 @@ int main()
     GLint intervalle(34);       //intervalle entre 2 centres d'îlots
     int emplacement_tour(0);
 
-
-    //Pour sécurité : on peut rentrer un nombre d'ilots nuls
+    //Pour sécurité : on peut rentrer un nombre d'ilots nul
     if (nbIlots == 0){
         tower = false;
     }
@@ -251,8 +254,8 @@ int main()
         GLint n(i); //Numéro absolu de l'ilot, puis, après la boucle while, numéro de l'ilot dans son carré
         GLint k(4); //Nombre d'ilots sur le carré courant
 
-        while(k<=n){ //Boucle permettant d'obtenir la valeur de j et de n, qui restent aux valeurs initiales
-            j++;    //Sur le premier carré (4 ilots autour du centre)
+        while(k<=n){ //Boucle permettant d'obtenir la valeur de j et de n, qui restent aux valeurs initiales sur
+            j++;     // le premier carré (4 ilots autour du centre)
             n-=k;
             k+=8;
         }
@@ -297,7 +300,8 @@ int main()
 
 
         //... dont dépend le type de l'ilot courant, les pourcentages sont déterminés au début du programme
-        //Ainsi en faisant las ome des autres probabilités, on obtient les valeur de l'intervalle de longueur la probabilité voulue
+        //Ainsi en faisant la somme des autres probabilités, on obtient les valeur de l'intervalle de
+        //longueur la probabilité voulue
         if (prob < probMaison1){
             typeIlot[i] = MAISONS1;
         } else if (probMaison1 <= prob && prob < probMaison1 + probMaison2){
@@ -322,6 +326,31 @@ int main()
         }
 
     }
+
+
+
+    //Pour sécurité, on limite le nombre de voitures au nombre d'ilots, car leur position initiale dépend des îlots
+    if(nbVoitures > nbIlots){
+        nbVoitures = nbIlots;
+    }
+
+    //Initialisation des voitures
+    //Position des voitures
+    glm::vec3 carPos[nbVoitures];
+    for(int i(0); i<nbVoitures; i++){
+        carPos[i] = glm::vec3(xIlot[i] + 17.0f, 0.4f, zIlot[i] + 13.0f);
+    }
+    //Vecteur pointant vers l'avant de la voiture
+    glm::vec3 carFront[nbVoitures];
+    for(int i(0); i<nbVoitures; i++){
+        carFront[i] = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    //Initialisation de dates et d'intervalles de temps pour le déplacement de la voiture
+    GLfloat deltaT(0);
+    GLfloat lastT;
+    lastT = glfwGetTime();
+
 
 
     // Boucle principale
@@ -487,7 +516,7 @@ int main()
 
         // On redessine l’objet
         soleil.Draw(shader, frustum, 0.0f, 0.0f, 0.0f);
-        //on repasse au variables de shader normales
+        //On repasse au variables de shader normales
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
         glUniform1f(ambientStrength, ambStr);
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
@@ -499,7 +528,6 @@ int main()
         //Lampadaire
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(lmpPos.x, 0.0f, lmpPos.z));
-        //model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.0f));
         // On remet a jour la variable globale du shader
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -510,7 +538,7 @@ int main()
             glUniform3f(lightColor, lmpColor.x, lmpColor.y, lmpColor.z);
 
             lit_lamp.Draw(shader, frustum, lmpPos.x, 0.0f, lmpPos.z);
-            //on repasse au variables de shader normales
+            //On repasse au variables de shader normales
             glUniform1f(ambientStrength, ambStr);
             glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
         } else{
@@ -533,7 +561,10 @@ int main()
             // On remet a jour la variable globale du shader
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             // On redessine l’objet
-            cloud.Draw(shader, frustum, glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500, 30.0f, zNua[i]);
+            cloud.Draw(shader, frustum,
+                       glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500,
+                       30.0f,
+                       zNua[i]);
         }
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
@@ -572,17 +603,98 @@ int main()
 
 
 
-        // Voiture
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(1.0f, 0.5f, -3.0f));
 
-        model = glm::scale(model, glm::vec3(0.004f));
-        // On remet a jour la variable globale du shader, en ajoutant de la lmuière spéculaire, la voiture reflète la lumière
-        glUniform1f(specularStrength, 6.0f);
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        // On redessine l’objet
-        car.Draw(shader, frustum, 1.5f, 0.5f, -3.0f);
-        glUniform1f(specularStrength, specStr);
+        // Voitures
+        //On met à jour les variables temporelles
+        deltaT = glfwGetTime() - lastT;
+        lastT = glfwGetTime();
+
+        for(int current_car(0); current_car < nbVoitures; current_car++){
+            model = glm::mat4(1.0f);
+            //On tourne le modèle en fonction de l'orientation de la voiture
+            model = glm::rotate(model,
+                                (carFront[current_car].z - glm::length(carFront[current_car].z)
+                                 + carFront[current_car].x) * (GLfloat)M_PI/2,
+                                glm::vec3(0.0f, 1.0f, 0.0f));
+            GLint dir;
+            dir = rand()%3;
+            //Le nombre de "couche" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
+            //Si la voiture d'approche trop de la limite de la ville,
+            //elle ne peut plus qu'aller à droit à la prochaine intersection pour ne pas sortir des limites
+            if(glm::length(carPos[current_car].x) + 34.0f >= (sqrt(nbIlots)/2)*34.0f
+                    || glm::length(carPos[current_car].z) + 30.0f >= (sqrt(nbIlots)/2)*34.0f){
+
+                dir = 0 ;
+            }
+
+
+            //Si la voiture se déplace selon les x et qu'elle rencontre une intersection,
+            //elle tourne à gauche ou à droite ou continue tout droit
+            if(carFront[current_car].x != 0 && glm::mod(carPos[current_car].x, 34.0f) <= deltaT*car_speed){
+                //tourner à droite
+                if(dir == 0){
+                    carFront[current_car] = glm::vec3(0.0f, 0.0f, carFront[current_car].x);
+                    carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                    carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+                //tourner à gauche
+                }else if(dir == 1){
+                    carFront[current_car] = glm::vec3(0.0f, 0.0f, -carFront[current_car].x);
+                    carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                    carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+                //aller tout droit
+                }else {
+                    carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                    carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+                }
+
+
+            //Si la voiture se déplace selon les z et qu'elle rencontre une intersection,
+            //elle tourne à gauche ou à droite ou continue tout droit
+            } else if(carFront[current_car].z != 0 && glm::mod(carPos[current_car].z + 4.0f, 34.0f) <= deltaT*car_speed){
+                //tourner à gauche
+                if(dir == 0){
+                    carFront[current_car] = glm::vec3(-carFront[current_car].z, 0.0f, 0.0f);
+                    carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                    carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+                //tourner à droite
+                }else if(dir == 1){
+                    carFront[current_car] = glm::vec3(carFront[current_car].z, 0.0f, 0.0f);
+                    carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                    carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+                //aller tout droit
+                }else {
+                    carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                    carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+                }
+
+
+            //Sinon, elle continue tout droit
+            } else {
+                carPos[current_car].x += carFront[current_car].x * deltaT * car_speed;
+                carPos[current_car].z += carFront[current_car].z * deltaT * car_speed;
+            }
+
+            //On place la voiture à gauche ou à droite de la route en fonction de son orientation
+            glm::mat4 mouvVoiture;
+            mouvVoiture = glm::translate(mouvVoiture,
+                                         glm::vec3(carPos[current_car].x - carFront[current_car].z * 0.9f,
+                                                   carPos[current_car].y,
+                                                   carPos[current_car].z + carFront[current_car].x * 0.9f));
+            model = mouvVoiture*model;
+
+            model = glm::scale(model, glm::vec3(0.004f));
+
+            // On remet a jour la variable globale du shader, en ajoutant de la lumière spéculaire, la voiture reflètant la lumière
+            glUniform1f(specularStrength, 6.0f);
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            // On redessine l’objet
+            car.Draw(shader, frustum, carPos[current_car].x, carPos[current_car].y, carPos[current_car].z);
+            glUniform1f(specularStrength, specStr);
+        }
+
+
+
+
 
 
 
@@ -642,26 +754,36 @@ int main()
                 //Leur position est déterministe
                 for (int tree(0); tree < 4; tree++){
                         model = glm::mat4(1.0f);
-                        model = glm::translate(model, glm::vec3(xIlot[i] + pow(-1,tree)*(i%4 +1)*1.5f + (tree*i)%3*1.4, 0.0f, zIlot[i] + pow(-1,tree)*(i%3 + 1)*tree - 3.0f + pow(-1,i)*(tree%3)*0.8));
+                        model = glm::translate(model,
+                                               glm::vec3(xIlot[i] + pow(-1,tree)*(i%4 +1)*1.5f + (tree*i)%3*1.4,
+                                                         0.0f,
+                                                         zIlot[i] + pow(-1,tree)*(i%3 + 1)*tree - 3.0f + pow(-1,i)*(tree%3)*0.8));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::scale(model, glm::vec3(1.3f));
                         // On remet a jour la variable globale du shader
                         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                         // On redessine l’objet
-                        arbre1.Draw(shader, frustum, xIlot[i] + pow(-1,tree)*(i%4 +1)*1.5f + (tree*i)%3*1.4, 0.0f, zIlot[i] + pow(-1,tree)*(i%3 + 1)*tree - 3.0f + pow(-1,i)*(tree%3)*0.8);
+                        arbre1.Draw(shader, frustum,
+                                    xIlot[i] + pow(-1,tree)*(i%4 +1)*1.5f + (tree*i)%3*1.4,
+                                    0.0f,
+                                    zIlot[i] + pow(-1,tree)*(i%3 + 1)*tree - 3.0f + pow(-1,i)*(tree%3)*0.8);
                 }
 
                 //Dessin des feuillus
-                //Leur position est déterministe
+                //Leur position est déterministe, mais varaiable
                 for (int tree(0); tree < 2; tree++){
                         model = glm::mat4(1.0f);
-                        model = glm::translate(model, glm::vec3(xIlot[i] +1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7, 0.0f, zIlot[i] + (i%3)*0.5f - 5.0f + (tree*i)%3));
+                        model = glm::translate(model, glm::vec3(xIlot[i] +1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7,
+                                                                0.0f,
+                                                                zIlot[i] + (i%3)*0.5f - 5.0f + (tree*i)%3));
                         model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                         model = glm::scale(model, glm::vec3(0.7f));
                         // On remet a jour la variable globale du shader
                         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                         // On redessine l’objet
-                        arbre2.Draw(shader, frustum, xIlot[i] +1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7, 0.0f, zIlot[i] + (i%3)*0.5f - 5.0f + (tree*i)%3);
+                        arbre2.Draw(shader, frustum, xIlot[i] + 1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7,
+                                    0.0f,
+                                    zIlot[i] + (i%3)*0.5f - 5.0f + (tree*i)%3);
                 }
 
 

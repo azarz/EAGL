@@ -20,7 +20,7 @@ Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli
 
 ### Compilation
 Se placer dans le dossier EAGL à l'aide d'un terminal.
-<blockquote>cd '/chemin_dépendant_de_l'emplacement_du_dossier/EAGL</blockquote>
+<blockquote>cd '/chemin_dépendant_de_l'emplacement_du_dossier/EAGL'</blockquote>
 Lancer la commande
 <blockquote>cmake .</blockquote>
 Une fois terminée, lancer la commande

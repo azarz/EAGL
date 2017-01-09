@@ -625,8 +625,9 @@ int main()
             //Le nombre de "couche" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
             //Si la voiture d'approche trop de la limite de la ville,
             //elle ne peut plus qu'aller à droit à la prochaine intersection pour ne pas sortir des limites
-            if(glm::length(carPos[current_car].x) + 34.0f >= (sqrt(nbIlots)/2)*34.0f
-                    || glm::length(carPos[current_car].z) + 30.0f >= (sqrt(nbIlots)/2)*34.0f){
+            if(glm::length(carPos[current_car].x) + 34.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
+                    || carPos[current_car].z + 30.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
+                    || carPos[current_car].z - 38.0f <= -(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed){
 
                 dir = 0 ;
             }

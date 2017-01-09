@@ -14,12 +14,13 @@ Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli
 + Génération aléatoire du monde :
     - 100% (paramétrisation en haut de main.cpp)  
 + Mouvements planifiés :
-    - 33% (Nuages, soleil, navette impériale, reste voiture et caméra)  
+    - 50% (Nuages, soleil, navette impériale, voitures. Caméra autonome non implémentée.)  
 
 ## COMMENT UTILISER ?
 
 ### Compilation
 Se placer dans le dossier EAGL à l'aide d'un terminal.
+<blockquote>cd '/chemin_dépendant_de_l'emplacement_du_dossier/EAGL</blockquote>
 Lancer la commande
 <blockquote>cmake .</blockquote>
 Une fois terminée, lancer la commande

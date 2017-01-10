@@ -201,6 +201,7 @@ public:
 
             this->Yaw = 45 + 5*currentFrame;
             this->Pitch = 0.0f + 10*cos(currentFrame/5);
+		
             this->updateCameraVectors();
         }
 

@@ -200,6 +200,8 @@ public:
             this->Position.y = 5.0f;
 
             this->Yaw = YAW*cos(currentFrame);
+		
+            this->updateCameraVectors();
         }
 
 

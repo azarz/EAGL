@@ -48,6 +48,7 @@ private:
     vector<Mesh> meshes;
     string directory;
     vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    //Le radius est le rayon de la sphère contenant l'objet qui sera testée avec le cône de vision pour le frutum culling
     float radius;
 
     /*  Functions   */

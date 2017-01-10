@@ -42,7 +42,7 @@ GLint DUREE_CYCLE(240);
 
 //Nombre d'îlots urbains à générer. Par défaut : 16
 //Valeurs pour avoir un carré sans trous : les carrés de nombres pairs
-//ATTENTION, GOURMAND (surtout au delà de 60)
+//ATTENTION, GOURMAND (surtout au delà de 40-50)
 GLint nbIlots(16);
 
 //Probabilité d'apparition des différents types d'ilots. (la dernière est égale à 100 - la somme des autres
@@ -62,12 +62,12 @@ bool tower(true);
 //Vitesse des voitures, par défaut 6.0f
 GLfloat car_speed(6.0f);
 
-//Nombre de voitures inférieur ou égal au nombre d'îlots, par défaut 3
-GLint nbVoitures(20);
+//Nombre de voitures inférieur ou égal au nombre d'îlots, par défaut 6
+GLint nbVoitures(6);
 
 //---------------- FIN DES PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
 
-
+//énumération des différents types d'îlots urbains
 enum Type_Ilot{
     MAISONS1,
     MAISONS2,
@@ -105,7 +105,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);     //Force VSync
 
-    //On active le face culling pour une mailleure performance (cela permet de ne pas afficher les faces non
+    //On active le face culling pour une meilleure performance (cela permet de ne pas afficher les faces non
     //visibles des polygones, et donc de ne pas faire les calculs coûteux de shader sur ces faces)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -197,7 +197,7 @@ int main()
 
 
     // On charge les modèles, avec le rayon de la sphère à tester pour le frustum culling
-    // Si cette sphère est dans le cône de vison, ou l'intersecte, on dessine l'objet
+    // Si cette sphère est dans le cône de vison ou l'intersecte, on dessine l'objet
     Model maison("model/House/house.obj", 7.5f);
     Model soleil("model/Sun/soleil.obj", 350.0f);
     Model lamp("model/Lamp/Lamp.obj", 3.0f);
@@ -212,12 +212,14 @@ int main()
     Model road("model/Road/route3.obj",22.0f);
     Model road2("model/Road/route3-2.obj",20.0f);
 
+
+
     //Initialisation des nuages
     GLfloat vitesseNuages;
     GLint nbNuages;
     srand(std::time(NULL)); //Initialise la seed de manière différente à chaque lancement du programme
     vitesseNuages = rand()%51/5; //Vitesse des nuages, entre 0 et 10 écrans/s
-    nbNuages = rand()%501; //Nombre de nuages, entre 0 et 500
+    nbNuages = rand()%701; //Nombre de nuages, entre 0 et 700
 
     GLfloat xNua[nbNuages];
     GLfloat zNua[nbNuages];
@@ -229,7 +231,7 @@ int main()
     }
 
 
-    //Initialisation des ilots:
+    //Initialisation des ilots urbains (patés de maisons):
     GLfloat xIlot[nbIlots];
     GLfloat zIlot[nbIlots];
     Type_Ilot typeIlot[nbIlots];
@@ -391,17 +393,18 @@ int main()
 
         glBindVertexArray(VAO);
 
-        // Position et couleur de la lumiere
+        // Position et couleur de la lumiere du soleil
         GLint lightPos = glGetUniformLocation(shader.Program, "lightPos");
         GLint lightColor = glGetUniformLocation(shader.Program, "lightColor");
         GLint ambientStrength = glGetUniformLocation(shader.Program, "ambientStrength");
         GLint specularStrength = glGetUniformLocation(shader.Program, "specularStrength");
         GLfloat ambStr(0.05f);
         GLfloat specStr(0.3f);
-        //On la positionne en relatif par rapport à la caméra
+        //On la positionne en relatif par rapport à la caméra, afin qu'elle "suive" l'utilisateur
         glm::vec4 lPos(camera.Position.x, camera.Position.y + 300.0f, camera.Position.z, 1.0f);
         glm::vec3 lColor(1.0f, 1.0f, 1.0f);
 
+        //Matrice de rotation du soleil autour de l'axe Z (les Z négatifs correspondent au nord)
         glm::mat4 rot;
         GLfloat angle = glm::mod(2*M_PI*(glfwGetTime()/DUREE_CYCLE), 2*M_PI);
         rot = glm::rotate(rot, angle, glm::vec3(0.0f, 0.0f, 1.0f));
@@ -424,11 +427,11 @@ int main()
             //Variable x utilisée : vaut 1 au début du crépuscule, et 0 à la fin
             double x = (ANGLE_CREPUSC - angle)/(ANGLE_CREPUSC - M_PI/4);
 
-            //Lumière orangée, le 0.05f en B permet la continuité avec la nuit
+            //Lumière orangée, le + 0.05f en B permet la continuité avec la nuit
             lColor = glm::vec3(x * 1.0f, pow(x, 2) * 1.0f, pow(x, 4) * 1.0f + 0.05f);
 
             //Couleur du 'ciel', le polynôme en x utilisé pour le calcul de R est construit de telle sorte que R(0) = R(1) = 0 et R(0.5) = 0.5
-            //Le 0.2f en B permet la continuité avec la nuit
+            //Le + 0.1f en B permet la continuité avec la nuit
             clearColor = glm::vec3((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.1f);
 
             //Lumière ambiante décroissante et continue, cohérente avec les valeurs de jour et de nuit
@@ -440,11 +443,11 @@ int main()
             //Variable x utilisée : vaut 0 au début de l'aube, et 1 à la fin
             double x = (ANGLE_AUBE - angle)/(ANGLE_AUBE - 5*M_PI/3);
 
-            //Lueur rosée-bleutée, le 0.05f en B permet la continuité avec la nuit
+            //Lueur rosée-bleutée, le + 0.05f en B permet la continuité avec la nuit
             lColor = glm::vec3(pow(x,4) * 1.0f, pow(x, 2) * 1.0f, x * 1.0f + 0.05f);
 
             //Couleur du 'ciel', le polynôme en x utilisé pour le calcul de R est construit de telle sorte que R(0) = R(1) = 0 et R(0.5) = 0.5
-            //Le 0.2f en B permet la continuité avec la nuit
+            //Le + 0.1f en B permet la continuité avec la nuit
             clearColor = glm::vec3((-2*pow(x,2) + 2*x) * 1.0f, pow(x, 2) * 0.5f, pow(x, 4) * 1.0f + 0.1f);
 
             //Lumière ambiante croissante et continue, cohérente avec les valeurs de jour et de nuit
@@ -480,13 +483,15 @@ int main()
         GLint lampPos = glGetUniformLocation(shader.Program, "lampPos");
         GLint lampColor = glGetUniformLocation(shader.Program, "lampColor");
 
-        //Couleur lampe à sodium, si il fait sombre
+        //Couleur lampe à sodium, si il fait sombre (entre le crépuscule et l'aube)
         glm::vec3 lmpColor;
         if (angle > 2*M_PI/5 && angle < 8*M_PI/5){
             lmpColor = glm::vec3(1.0f, 0.56f, 0.17f);
+        //De jour, aucune lumière
         } else {
             lmpColor = glm::vec3(0.0f, 0.0f, 0.0f);
         }
+        //On met à jour la variable du shader
         glUniform3f(lampColor, lmpColor.x, lmpColor.y , lmpColor.z);
 
         //Position utilisée plus tard pour le placement du modèle
@@ -503,11 +508,12 @@ int main()
 
 
 
+
         // Dessin des objets :
 
         // Soleil
         model = glm::mat4(1.0f);
-        //On le positionne en relatif par rapport à la caméra
+        //On le positionne en relatif par rapport à la caméra, afin qu'il "suive" l'utilisateur
         model = glm::translate(model, glm::vec3(camera.Position.x, camera.Position.y + 340.0f, camera.Position.z));
         model = rot*model;
         model = glm::scale(model, glm::vec3(13.0f));
@@ -545,6 +551,8 @@ int main()
             //On repasse au variables de shader normales
             glUniform1f(ambientStrength, ambStr);
             glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
+
+        //S'il n'est pas allumé, on le desine normalement
         } else{
             lamp.Draw(shader, frustum, lmpPos.x, 0.0f, lmpPos.z);
         }
@@ -555,7 +563,7 @@ int main()
 
         // Nuages, non affectés pas la lumière des lampadaires
         glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
-        //On parcourt la liste initialisée anvant la rentrée dans la boucle while
+        //On parcourt la liste initialisée avant la rentrée dans la boucle while
         for(int i(0); i < nbNuages; i++){
             model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500,
@@ -622,7 +630,7 @@ int main()
                                 glm::vec3(0.0f, 1.0f, 0.0f));
             GLint dir;
             dir = rand()%3;
-            //Le nombre de "couche" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
+            //Le nombre de "couches" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
             //Si la voiture d'approche trop de la limite de la ville,
             //elle ne peut plus qu'aller à droit à la prochaine intersection pour ne pas sortir des limites
             if(glm::length(carPos[current_car].x) + 34.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
@@ -704,9 +712,10 @@ int main()
 
 
         //Dessin des îlots
-        GLint rotMais2(0);
+        GLint rotMais2(0); //Facteur de rotations des maisons de type 2, pour une génération aléatoire.
         for(int i(0); i < nbIlots; i++){
-            //Un carré de maisons avec des arbres au milieu
+
+            //Maisons de type 1 : Un carré de maisons avec des arbres au milieu
             if(typeIlot[i]==MAISONS1){
                 //Dessin des maisons (en carré)
                 GLfloat x, y, z;
@@ -756,7 +765,7 @@ int main()
                 }
 
                 //Dessin des sapins
-                //Leur position est déterministe
+                //Leur position est déterministe, mais différente pour chaque ilot
                 for (int tree(0); tree < 4; tree++){
                         model = glm::mat4(1.0f);
                         model = glm::translate(model,
@@ -775,7 +784,7 @@ int main()
                 }
 
                 //Dessin des feuillus
-                //Leur position est déterministe, mais varaiable
+                //Leur position est déterministe, mais différente pour chaque ilot
                 for (int tree(0); tree < 2; tree++){
                         model = glm::mat4(1.0f);
                         model = glm::translate(model, glm::vec3(xIlot[i] +1.0f + pow(-1,tree)*(i%2) + pow(-1,i)*tree*7,
@@ -793,7 +802,7 @@ int main()
 
 
 
-            // 2 maisons en angle droit avec un sapin et éventuellement un feuillu
+            // Maisons de type 2 : 2 maisons en angle droit avec un sapin et éventuellement un feuillu à côté
             } else if(typeIlot[i]==MAISONS2){
                     // Maisons
                     // Maison1
@@ -841,6 +850,7 @@ int main()
                         // On redessine l’objet
                         arbre2.Draw(shader, frustum, xIlot[i] + 6.0f, 0.0f, zIlot[i] + 5.0f);
                     }
+                    //La prochaine instaciation des maisons de type 2 aura une oriantation différente
                     rotMais2++;
 
 
@@ -856,7 +866,7 @@ int main()
 
 
 
-            // Trois rangées de maisons
+            // Maisons de type 3 : Trois rangées de maisons
             } else if(typeIlot[i] == MAISONS3){
                 GLfloat x, y, z;
                 for (int house(0); house <9; house++){
@@ -874,7 +884,7 @@ int main()
                 }
 
 
-            // Un carré de sapins
+            // Arbres de type 1 : Un carré de sapins
             } else if(typeIlot[i] == ARBRES1){
                 GLfloat x, y, z;
                 for (int tree(0); tree < 16; tree++){
@@ -913,7 +923,7 @@ int main()
                 glUniform1f(specularStrength, specStr);
 
 
-            //4 sapins et une maison au centre
+            //Arbres de type 2 : 4 sapins et une maison au centre
             } else if(typeIlot[i] == ARBRES2){
                 GLfloat x, y, z;
                 for (int tree(0); tree < 4; tree++){
@@ -950,7 +960,7 @@ int main()
 
 
 
-            //Un arbre géant
+            //Arbres de type 3 : Un arbre géant au centre
             } else{
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]-5.0f));

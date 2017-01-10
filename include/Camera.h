@@ -23,10 +23,11 @@ enum Camera_Movement {
     RIGHT
 };
 
-//Les 2 types de caméra que nous utilisons
+//Les 3 types de caméra que nous utilisons
 enum Camera_Type {
     GROUND,
-    SKY
+    SKY,
+    ANIMATED
 };
 
 // Default camera values
@@ -95,8 +96,8 @@ public:
     void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
     {
         GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (type != SKY){
-            //Si la caméra n'est pas dans les airs, le fonctionnement est normal
+        if (this->type == GROUND){
+            //Si la caméra est au sol, le fonctionnement est normal
             if (direction == FORWARD)
                 this->Position += this->Front * velocity;
             if (direction == BACKWARD)
@@ -106,8 +107,8 @@ public:
             if (direction == RIGHT)
                 this->Position += this->Right * velocity;
 
-        } else {
-            //Sinon, le déplcement est particulier : y est constant et seuls x et z changent linéairement
+        } else if (this->type == SKY){
+            //Sinon si elle en mode aérien, le déplcement est particulier : y est constant et seuls x et z changent linéairement
             if (direction == FORWARD)
                 this->Position += glm::vec3(0.0f, 0.0f, -1.0f)  * velocity;
             if (direction == BACKWARD)
@@ -118,13 +119,15 @@ public:
                 this->Position += glm::vec3(1.0f, 0.0f, 0.0f) * velocity;
 
         }
+        //Enfin, si la caméra est animée, les imputs ne changent rien
     }
+
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true)
     {
-        if (this->type != SKY){
-            //Si la caméra et dans les airs, alors la souris n'est pas prise en compte
+        if (this->type == GROUND){
+            //La souris n'est prise en compte que en caméra de type "sol"
             xoffset *= this->MouseSensitivity;
             yoffset *= this->MouseSensitivity;
 
@@ -171,13 +174,39 @@ public:
 
         //Condition qui permet à la caméra de rester à une altitude constante sur le sol
         //(inutile dans les airs car les déplacements se font à y constant)
+        //On y gère aussi les cas de sprint et d'accroupissement
         if(this->type == GROUND){
-                this->Position.y = 1.0f;
+            //hauteur normale de vue
+            this->Position.y = 1.0f;
+
+            //Si CTRL (gauche ou droite) est enfoncée, on est accroupi : vue moins haute et déplacement plus lent
+            if(keys[341] || keys[345]){
+                this->Position.y = 0.5f;
+                this->MovementSpeed = SPEED/2;
+
+            //Si SHIFT (gauche ou droite) est enfoncée, on sprinte : on se déplace plus vite
+            } else if(keys[340] || keys[344]){
+                this->MovementSpeed = SPEED*2;
+
+            //Sinon, on est à hauteur constante et à vitesse normale
+            }else{
+                this->MovementSpeed = SPEED;
+            }
+
+        //Définition de l'animation de la caméra
+        } else if(this->type == ANIMATED){
+            this->Position.x = 10*cos(currentFrame);
+            this->Position.z = 10*sin(currentFrame);
+            this->Position.y = 5.0f;
+
+            this->Yaw = YAW*cos(currentFrame);
         }
+
 
     }
 
     //Fonction permettant de switcher les modes de caméra avec la touche espace
+    //keys[32] correspond à la barre d'espace
     void Switch_Mode(){
         if(keys[32]){
             if(this->type == GROUND){
@@ -190,6 +219,13 @@ public:
                 this->updateCameraVectors();
                 this->Up    =  glm::vec3(0.0f, 0.0f, -1.0f);
                 this->MovementSpeed = 12*SPEED;
+            } else if(this->type == SKY){
+                //Pour passer en mode animé, il suffit de changer l'attribut type et de remettre le pitch et le Up par défaut,
+                //le déplacement est géré dans la fonction DoMovement()
+                this->type  =  ANIMATED;
+                this->Up    = glm::vec3(0.0f, 1.0f, 0.0f);
+                this->Pitch = 0.0f;
+                this->updateCameraVectors();
             }else{
                 //Pour passer sur le sol, on réoriente la caméra (pour ne pas se retrouver à regarder le sol), et on retourne à
                 //l'altitude normale, en réinitalisant 'Up' et la vitesse
@@ -200,10 +236,10 @@ public:
                 this->Up    = glm::vec3(0.0f, 1.0f, 0.0f);
                 this->MovementSpeed = SPEED;
             }
+            //Permet d'éviter les problèmes si la touche est enfoncée pendant plusieurs frames
             keys[32] = false;
         }
     }
-
 
 
 private:

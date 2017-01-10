@@ -28,8 +28,10 @@ L'exécutable devrait se trouver dans le dossier EAGL
 
 ### Utilisation
 Lancer l'exécutable situé dans le dossier EAGL.  
-Pour se déplacer, utiliser les **flèches directionnelles ou ZQSD** et la souris.  
-Pour changer de type de caméra, appuyer sur la **barre d'espace**.
+Pour se déplacer, utiliser les **flèches directionnelles ou ZQSD** et la souris.
+Maintenir **CTRL** (gauche ou droite) pour s'accroupir, maintenir **SHIFT** (gauche ou droite) pour sprinter.
+  
+Pour changer de type de caméra, appuyer sur la **barre d'espace**. Les trois modes sont : caméra au sol, caméra aérienne et caméra animée automatiquement.
 
 Les principaux paramètres modifiables du programme se situent **en haut de main.cpp**. **(RECOMPILATION NÉCESSAIRE)**
 

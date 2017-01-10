@@ -181,7 +181,7 @@ public:
 
             //Si CTRL (gauche ou droite) est enfoncée, on est accroupi : vue moins haute et déplacement plus lent
             if(keys[341] || keys[345]){
-                this->Position.y = 0.5f;
+                this->Position.y = 0.6f;
                 this->MovementSpeed = SPEED/2;
 
             //Si SHIFT (gauche ou droite) est enfoncée, on sprinte : on se déplace plus vite
@@ -195,11 +195,13 @@ public:
 
         //Définition de l'animation de la caméra
         } else if(this->type == ANIMATED){
-            this->Position.x = 10*cos(currentFrame);
-            this->Position.z = 10*sin(currentFrame);
-            this->Position.y = 5.0f;
+            this->Position.x = 10*cos(currentFrame/4);
+            this->Position.z = 10*sin(currentFrame/4);
+            this->Position.y = 5 + cos(currentFrame/2);
 
-            this->Yaw = YAW*cos(currentFrame);
+            this->Yaw = 45 + 5*currentFrame;
+            this->Pitch = 0.0f + 10*cos(currentFrame/5);
+            this->updateCameraVectors();
         }
 
 

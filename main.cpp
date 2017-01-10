@@ -43,7 +43,7 @@ GLint DUREE_CYCLE(240);
 //Nombre d'îlots urbains à générer. Par défaut : 16
 //Valeurs pour avoir un carré sans trous : les carrés de nombres pairs
 //ATTENTION, GOURMAND (surtout au delà de 40-50)
-GLint nbIlots(16);
+GLint nbIlots(36);
 
 //Probabilité d'apparition des différents types d'ilots. (la dernière est égale à 100 - la somme des autres
 //Par défaut : 35, 18, 22, 7, 8
@@ -63,7 +63,7 @@ bool tower(true);
 GLfloat car_speed(6.0f);
 
 //Nombre de voitures inférieur ou égal au nombre d'îlots, par défaut 6
-GLint nbVoitures(6);
+GLint nbVoitures(20);
 
 //---------------- FIN DES PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
 

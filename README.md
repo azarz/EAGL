@@ -14,7 +14,7 @@ Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli
 + Génération aléatoire du monde :
     - 100% (paramétrisation en haut de main.cpp)  
 + Mouvements planifiés :
-    - 50% (Nuages, soleil, navette impériale, voitures. Caméra autonome non implémentée.)  
+    - 100% (Nuages, soleil, navette impériale, voitures. Caméra autonome.)  
 
 ## COMMENT UTILISER ?
 

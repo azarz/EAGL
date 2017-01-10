@@ -211,6 +211,7 @@ int main()
     Model grass("model/Grass/jardin4.obj", 25.0f);
     Model road("model/Road/route3.obj",22.0f);
     Model road2("model/Road/route3-2.obj",20.0f);
+    Model magnesie("model/Warehouse/entrpot.obj", 350.0f);
 
 
 
@@ -229,6 +230,8 @@ int main()
         xNua[i] = (rand()%1001) - 500;
         zNua[i] = (rand()%1001) - 500;
     }
+
+
 
 
     //Initialisation des ilots urbains (patés de maisons):
@@ -331,6 +334,8 @@ int main()
 
 
 
+
+    //INIT VOITURES
     //Pour sécurité, on limite le nombre de voitures au nombre d'ilots, car leur position initiale dépend des ilots
     if(nbVoitures > nbIlots){
         nbVoitures = nbIlots;
@@ -353,6 +358,28 @@ int main()
     GLfloat lastT;
     lastT = glfwGetTime();
 
+
+
+    //Initialisation du Local à Magnésie
+    //Le nombre de "couches" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
+    //On le place en périphérie de la ville
+    GLint nb_couches;
+    nb_couches = ceil(sqrt(nbIlots)/2);
+
+    //Détermination de la position du local, aléatoirement
+    GLint xMagn;
+    GLint zMagn;
+    GLint posMagn = rand()%(nbIlots*2 + 1);
+    posMagn -= nbIlots;
+
+    //Détermination si on le situe sur un côté est-ouest ou nord-sud de la ville
+    if(posMagn%2 == 0){
+        xMagn = 50*nb_couches;
+        zMagn = posMagn*34;
+    } else {
+        zMagn = 50*nb_couches;
+        xMagn = posMagn*34;
+    }
 
 
     // Boucle principale
@@ -511,7 +538,7 @@ int main()
 
         // Dessin des objets :
 
-        // Soleil
+        // Soleil -------------------------------
         model = glm::mat4(1.0f);
         //On le positionne en relatif par rapport à la caméra, afin qu'il "suive" l'utilisateur
         model = glm::translate(model, glm::vec3(camera.Position.x, camera.Position.y + 340.0f, camera.Position.z));
@@ -535,7 +562,7 @@ int main()
 
 
 
-        //Lampadaire
+        //Lampadaire ----------------------------
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(lmpPos.x, 0.0f, lmpPos.z));
         model = glm::scale(model, glm::vec3(1.0f));
@@ -561,13 +588,27 @@ int main()
 
 
 
-        // Nuages, non affectés pas la lumière des lampadaires
+
+        //Local à magnésie ---------------------------------------
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(xMagn, 0.0f, zMagn-4.0f));
+        model = glm::scale(model, glm::vec3(80.0f));
+        // On remet a jour la variable globale du shader
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        magnesie.Draw(shader, frustum, xMagn, 0.0f, zMagn)
+
+
+
+
+
+
+        // Nuages, non affectés pas la lumière des lampadaires -------------------------------
         glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
         //On parcourt la liste initialisée avant la rentrée dans la boucle while
         for(int i(0); i < nbNuages; i++){
             model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500,
-                                                    30.0f, //Altitudde commune aux nuages
+                                                    75.0f, //Altitudde commune aux nuages
                                                     zNua[i])); //Les nuages se déplacent d'ouest en est (vent de mer, par exemple)
             model = glm::scale(model, glm::vec3(3.0f));
             // On remet a jour la variable globale du shader
@@ -584,7 +625,7 @@ int main()
 
 
 
-        // Navette Impériale
+        // Navette Impériale -------------------------------
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 40.0f, 18.0f));
         model = glm::rotate(model, -(GLfloat)M_PI/2, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -616,7 +657,7 @@ int main()
 
 
 
-        // Voitures
+        // Voitures ----------------------------------------
         //On met à jour les variables temporelles
         deltaT = glfwGetTime() - lastT;
         lastT = glfwGetTime();
@@ -633,9 +674,9 @@ int main()
             //Le nombre de "couches" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
             //Si la voiture d'approche trop de la limite de la ville,
             //elle ne peut plus qu'aller à droit à la prochaine intersection pour ne pas sortir des limites
-            if(glm::length(carPos[current_car].x) + 34.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
-                    || carPos[current_car].z + 30.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
-                    || carPos[current_car].z - 38.0f <= -(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed){
+            if(glm::length(carPos[current_car].x) + 34.0f >= floor(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
+                    || carPos[current_car].z + 30.0f >= floor(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
+                    || carPos[current_car].z - 38.0f <= -floor(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed){
 
                 dir = 0 ;
             }
@@ -711,7 +752,7 @@ int main()
 
 
 
-        //Dessin des îlots
+        //Dessin des îlots -------------------------------------
         GLint rotMais2(0); //Facteur de rotations des maisons de type 2, pour une génération aléatoire.
         for(int i(0); i < nbIlots; i++){
 

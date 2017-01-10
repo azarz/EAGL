@@ -43,7 +43,7 @@ GLint DUREE_CYCLE(240);
 //Nombre d'îlots urbains à générer. Par défaut : 16
 //Valeurs pour avoir un carré sans trous : les carrés de nombres pairs
 //ATTENTION, GOURMAND (surtout au delà de 40-50)
-GLint nbIlots(36);
+GLint nbIlots(16);
 
 //Probabilité d'apparition des différents types d'ilots. (la dernière est égale à 100 - la somme des autres
 //Par défaut : 35, 18, 22, 7, 8
@@ -212,7 +212,7 @@ int main()
     Model grass("model/Grass/jardin4.obj", 25.0f);
     Model road("model/Road/route3.obj",22.0f);
     Model road2("model/Road/route3-2.obj",20.0f);
-    Model magnesie("model/Warehouse/entrepot2.obj", 17.0f);
+    Model magnesie("model/Warehouse/entrepot.obj", 17.0f);
     Model banc("model/Bench/banc.obj", 2.0f);
 
 
@@ -642,8 +642,6 @@ int main()
         //On met à jour les variables temporelles
         deltaT = glfwGetTime() - lastT;
         lastT = glfwGetTime();
-
-        std::cout<< 1/deltaT << std::endl;
 
         for(int current_car(0); current_car < nbVoitures; current_car++){
             model = glm::mat4(1.0f);

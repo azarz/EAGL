@@ -56,14 +56,18 @@ GLint probArbre2(8);
 // probArbre3 = 100 - (probMaison1 + probMaison2 + probMaison3 + probArbre1 + probArbre2)
 
 //Booléen concernant la présence de la Croutitower. S'il est true, elle apparaîtra forcément
-//Sinon, elle n'apparaîtra pas. Par défaut true
+//Sinon, elle n'apparaîtra pas. Par défaut true.
 bool tower(true);
+
+//Booléen concernant la présence de l'entrepôt à magnésie. S'il est true, il apparaîtra forcément
+//Sinon, il n'apparaîtra pas. Par défaut true.
+bool trafic_de_magnesie(true);
 
 //Vitesse des voitures, par défaut 6.0f
 GLfloat car_speed(6.0f);
 
 //Nombre de voitures inférieur ou égal au nombre d'îlots, par défaut 6
-GLint nbVoitures(20);
+GLint nbVoitures(6);
 
 //---------------- FIN DES PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
 
@@ -75,7 +79,8 @@ enum Type_Ilot{
     ARBRES1,
     ARBRES2,
     ARBRES3,
-    TOWER
+    TOWER,
+    ENTREPOT
 };
 
 
@@ -211,7 +216,7 @@ int main()
     Model grass("model/Grass/jardin4.obj", 25.0f);
     Model road("model/Road/route3.obj",22.0f);
     Model road2("model/Road/route3-2.obj",20.0f);
-    Model magnesie("model/Warehouse/entrpot.obj", 350.0f);
+    Model magnesie("model/Warehouse/entrepot.obj", 350.0f);
 
 
 
@@ -240,6 +245,7 @@ int main()
     Type_Ilot typeIlot[nbIlots];
     GLint intervalle(34);       //intervalle entre 2 centres d'îlots
     int emplacement_tour(0);
+    int emplacement_entrepot(0);
 
     //Pour sécurité : on peut rentrer un nombre d'ilots nul
     if (nbIlots == 0){
@@ -249,8 +255,15 @@ int main()
 
     //On sélectionne l'emplacement de la Croutitower
     if(tower){
-        emplacement_tour = rand()%nbIlots;
+        emplacement_tour = rand()%(nbIlots-1);
     }
+
+    //On sélectionne l'emplacement du local à magnésie s'il doit apparaître
+    //Il apparaît au dernier îlot, en périphérie de la ville
+    if(trafic_de_magnesie){
+        emplacement_entrepot = nbIlots-1;
+    }
+
 
     //Positions des centres d'ilot, et type d'ilot déterminé aléatoirement
     for(int i(0); i < nbIlots; i++){
@@ -330,6 +343,11 @@ int main()
             typeIlot[i] = TOWER;
         }
 
+        // On force la création du local à magnésie à l'emplacement prévu
+        if(tower && i==emplacement_entrepot){
+            typeIlot[i] = ENTREPOT;
+        }
+
     }
 
 
@@ -359,27 +377,6 @@ int main()
     lastT = glfwGetTime();
 
 
-
-    //Initialisation du Local à Magnésie
-    //Le nombre de "couches" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
-    //On le place en périphérie de la ville
-    GLint nb_couches;
-    nb_couches = ceil(sqrt(nbIlots)/2);
-
-    //Détermination de la position du local, aléatoirement
-    GLint xMagn;
-    GLint zMagn;
-    GLint posMagn = rand()%(nbIlots*2 + 1);
-    posMagn -= nbIlots;
-
-    //Détermination si on le situe sur un côté est-ouest ou nord-sud de la ville
-    if(posMagn%2 == 0){
-        xMagn = 50*nb_couches;
-        zMagn = posMagn*34;
-    } else {
-        zMagn = 50*nb_couches;
-        xMagn = posMagn*34;
-    }
 
 
     // Boucle principale
@@ -588,27 +585,13 @@ int main()
 
 
 
-
-        //Local à magnésie ---------------------------------------
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(xMagn, 0.0f, zMagn-4.0f));
-        model = glm::scale(model, glm::vec3(80.0f));
-        // On remet a jour la variable globale du shader
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        magnesie.Draw(shader, frustum, xMagn, 0.0f, zMagn)
-
-
-
-
-
-
         // Nuages, non affectés pas la lumière des lampadaires -------------------------------
         glUniform3f(lampColor, 0.0f, 0.0f , 0.0f);
         //On parcourt la liste initialisée avant la rentrée dans la boucle while
         for(int i(0); i < nbNuages; i++){
             model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(glm::mod((GLfloat)(xNua[i] + glfwGetTime()*vitesseNuages + 500),1000.0f) - 500,
-                                                    75.0f, //Altitudde commune aux nuages
+                                                    30.0f, //Altitudde commune aux nuages
                                                     zNua[i])); //Les nuages se déplacent d'ouest en est (vent de mer, par exemple)
             model = glm::scale(model, glm::vec3(3.0f));
             // On remet a jour la variable globale du shader
@@ -674,9 +657,9 @@ int main()
             //Le nombre de "couches" d'îlots et donné par la fonction  x -> sqrt(x)/2 où x est le nombre d'îlots
             //Si la voiture d'approche trop de la limite de la ville,
             //elle ne peut plus qu'aller à droit à la prochaine intersection pour ne pas sortir des limites
-            if(glm::length(carPos[current_car].x) + 34.0f >= floor(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
-                    || carPos[current_car].z + 30.0f >= floor(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
-                    || carPos[current_car].z - 38.0f <= -floor(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed){
+            if(glm::length(carPos[current_car].x) + 34.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
+                    || carPos[current_car].z + 30.0f >= (sqrt(nbIlots)/2)*34.0f + deltaT*car_speed
+                    || carPos[current_car].z - 38.0f <= -(sqrt(nbIlots)/2)*34.0f + deltaT*car_speed){
 
                 dir = 0 ;
             }
@@ -905,6 +888,16 @@ int main()
                 // On redessine l’objet
                 croutitower.Draw(shader, frustum, xIlot[i], 35.0f, zIlot[i]-3.0f);
 
+
+
+            //Local à magnésie
+            }else if(typeIlot[i] == ENTREPOT){
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(xIlot[i] + 1.5f, -0.5f, zIlot[i]-4.0f));
+                model = glm::scale(model, glm::vec3(2.0f));
+                // On remet a jour la variable globale du shader
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                magnesie.Draw(shader, frustum, xIlot[i] + 1.5f, -0.5f, zIlot[i]-4.0f);
 
 
             // Maisons de type 3 : Trois rangées de maisons

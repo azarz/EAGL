@@ -96,7 +96,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "EAGL", nullptr, nullptr); // Windowed
-    glfwMakeContextCurrent(window);        
+    glfwMakeContextCurrent(window);
    
     glewExperimental = GL_TRUE;
     glewInit();
@@ -108,12 +108,8 @@ int main()
     glViewport(0, 0, width, height);
     
     glEnable(GL_DEPTH_TEST);
-    glfwSwapInterval(1);     //Force VSync
+    glfwSwapInterval(1);     //Enabling VSync to save ressources
 
-    //On active le face culling pour une meilleure performance (cela permet de ne pas afficher les faces non
-    //visibles des polygones, et donc de ne pas faire les calculs coûteux de shader sur ces faces)
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
 
     Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
 
@@ -216,7 +212,8 @@ int main()
     Model grass("model/Grass/jardin4.obj", 25.0f);
     Model road("model/Road/route3.obj",22.0f);
     Model road2("model/Road/route3-2.obj",20.0f);
-    Model magnesie("model/Warehouse/entrepot.obj", 350.0f);
+    Model magnesie("model/Warehouse/entrepot2.obj", 17.0f);
+    Model banc("model/Bench/banc.obj", 2.0f);
 
 
 
@@ -261,7 +258,8 @@ int main()
     //On sélectionne l'emplacement du local à magnésie s'il doit apparaître
     //Il apparaît au dernier îlot, en périphérie de la ville
     if(trafic_de_magnesie){
-        emplacement_entrepot = nbIlots-1;
+
+        emplacement_entrepot = nbIlots-1 - rand()%5;
     }
 
 
@@ -645,6 +643,8 @@ int main()
         deltaT = glfwGetTime() - lastT;
         lastT = glfwGetTime();
 
+        std::cout<< 1/deltaT << std::endl;
+
         for(int current_car(0); current_car < nbVoitures; current_car++){
             model = glm::mat4(1.0f);
             //On tourne le modèle en fonction de l'orientation de la voiture
@@ -890,7 +890,7 @@ int main()
 
 
 
-            //Local à magnésie
+            //Le Local à magnésie
             }else if(typeIlot[i] == ENTREPOT){
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(xIlot[i] + 1.5f, -0.5f, zIlot[i]-4.0f));
@@ -898,6 +898,7 @@ int main()
                 // On remet a jour la variable globale du shader
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                 magnesie.Draw(shader, frustum, xIlot[i] + 1.5f, -0.5f, zIlot[i]-4.0f);
+
 
 
             // Maisons de type 3 : Trois rangées de maisons
@@ -918,7 +919,7 @@ int main()
                 }
 
 
-            // Arbres de type 1 : Un carré de sapins
+            // Arbres de type 1 : Un carré de sapins avec 2 bancs au centre
             } else if(typeIlot[i] == ARBRES1){
                 GLfloat x, y, z;
                 for (int tree(0); tree < 16; tree++){
@@ -944,6 +945,18 @@ int main()
                     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                     // On redessine l’objet
                     arbre1.Draw(shader, frustum, x, y, z);
+                }
+
+                //Dessin des bancs
+                for(int bench(0);bench<2;bench++){
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]-4.0f + pow(-1,bench)));
+                    model = glm::rotate(model, (GLfloat) M_PI * bench, glm::vec3(0.0f, 1.0f, 0.0f));
+                    model = glm::scale(model, glm::vec3(0.4f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    banc.Draw(shader, frustum, xIlot[i], 0.0f, zIlot[i]-4.0f + pow(-1,bench));
                 }
 
                 //De l'herbe en dessous et une clôture
@@ -994,16 +1007,32 @@ int main()
 
 
 
-            //Arbres de type 3 : Un arbre géant au centre
+            //Arbres de type 3 : Un arbre géant au centre avec des bancs autour
             } else{
                 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]-5.0f));
+                model = glm::translate(model, glm::vec3(xIlot[i], 0.0f, zIlot[i]-4.0f));
                 model = glm::rotate(model, (GLfloat) M_PI/2, glm::vec3(-1.0f, 0.0f, 0.0f));
                 model = glm::scale(model, glm::vec3(1.4f));
                 // On remet a jour la variable globale du shader
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
                 // On redessine l’objet
                 arbre2.Draw(shader, frustum, xIlot[i], 4.0f, zIlot[i]-5.0f);
+
+                //Dessin des 4 bancs, qui font face à l'arbre
+                for(int bench(0); bench<4; bench++){
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(xIlot[i] + (bench%2)*pow(-1, floor(bench/2))*7.0f,
+                                                            0.0f,
+                                                            zIlot[i]-4.0f + ((bench+1)%2)*pow(-1, floor(bench/2))*7.0f));
+                    model = glm::rotate(model, (GLfloat) M_PI/2 * (bench+2), glm::vec3(0.0f, 1.0f, 0.0f));
+                    model = glm::scale(model, glm::vec3(0.4f));
+                    // On remet a jour la variable globale du shader
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                    // On redessine l’objet
+                    banc.Draw(shader, frustum, xIlot[i] + (bench%2)*pow(-1, floor(bench/2))*7.0f,
+                                                0.0f,
+                                                zIlot[i]-4.0f + ((bench+1)%2)*pow(-1, floor(bench/2))*7.0);
+                }
 
                 //De l'herbe en dessous et une clôture
                 model = glm::mat4(1.0f);

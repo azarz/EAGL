@@ -43,7 +43,7 @@ GLint DUREE_CYCLE(240);
 //Nombre d'îlots urbains à générer. Par défaut : 16
 //Valeurs pour avoir un carré sans trous : les carrés de nombres pairs
 //ATTENTION, GOURMAND (surtout au delà de 40-50)
-GLint nbIlots(16);
+GLint nbIlots(4);
 
 //Probabilité d'apparition des différents types d'ilots. (la dernière est égale à 100 - la somme des autres
 //Par défaut : 35, 18, 22, 7, 8
@@ -109,6 +109,12 @@ int main()
     
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);     //Enabling VSync to save ressources
+
+
+    //On active le face culling pour une meilleure performance (cela permet de ne pas afficher les faces non
+    //visibles des polygones, et donc de ne pas faire les calculs coûteux de shader sur ces faces)
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
 
     Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
@@ -895,7 +901,12 @@ int main()
                 model = glm::scale(model, glm::vec3(2.0f));
                 // On remet a jour la variable globale du shader
                 glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+                //On désactive le face culling pour pouvoir afficher le toit
+                glDisable(GL_CULL_FACE);
                 magnesie.Draw(shader, frustum, xIlot[i] + 1.5f, -0.5f, zIlot[i]-4.0f);
+                //On réactive le face culling
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
 
 
 

@@ -4,7 +4,11 @@ Emulsion Artistique en openGL
 or   
 Especially Artistic usage of openGL
 
-Projet openGL du binôme composé par Aranud Grégoire et Amaury Zarzelli
+Projet openGL du binôme composé par Arnaud Grégoire et Amaury Zarzelli
+
+**TODO**
++ Shadow mapping
++ Menus
 
 ## Modules implémentés
 + Lumière dynamique : 

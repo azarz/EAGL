@@ -4,7 +4,9 @@ Emulsion Artistique en openGL
 or   
 Especially Artistic usage of openGL
 
-Projet openGL du binôme composé par Arnaud Grégoire et Amaury Zarzelli
+Projet openGL (ING2) du binôme composé par Arnaud Grégoire et Amaury Zarzelli
+
+Vidéo de présentation : https://www.youtube.com/watch?v=GPBEjxnHNRY
 
 **TODO**
 + Shadow mapping

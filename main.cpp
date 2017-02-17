@@ -264,7 +264,6 @@ int main()
     //On sélectionne l'emplacement du local à magnésie s'il doit apparaître
     //Il apparaît au dernier îlot, en périphérie de la ville
     if(trafic_de_magnesie){
-
         emplacement_entrepot = nbIlots-1 - rand()%5;
     }
 
@@ -348,7 +347,7 @@ int main()
         }
 
         // On force la création du local à magnésie à l'emplacement prévu
-        if(tower && i==emplacement_entrepot){
+        if(trafic_de_magnesie && i==emplacement_entrepot){
             typeIlot[i] = ENTREPOT;
         }
 

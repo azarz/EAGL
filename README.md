@@ -1,4 +1,4 @@
-﻿# EAGL
+# EAGL
 
 Emulsion Artistique en openGL   
 or   

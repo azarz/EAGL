@@ -34,7 +34,7 @@ Lancer la commande
 $ cmake .
 ```
 Une fois terminée, lancer la commande
-````shell
+```shell
 $ make
 ```
 L'exécutable devrait se trouver dans le dossier EAGL

@@ -24,6 +24,9 @@ Vidéo de présentation : https://www.youtube.com/watch?v=GPBEjxnHNRY
 
 ## COMMENT UTILISER ?
 
+### Prérequis
+xorg-dev, libglu1-mesa-dev, libsoil-dev
+
 ### Compilation
 Se placer dans le dossier EAGL à l'aide d'un terminal.
 ```shell

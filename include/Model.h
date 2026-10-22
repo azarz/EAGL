@@ -8,10 +8,10 @@
 #include <vector>
 using namespace std;
 // GL Includes
-#include <GL/glew.h> // Contains all the necessery OpenGL includes
+#include "GLCompat.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <SOIL/SOIL.h>
+#include "ImageLoader.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -32,7 +32,7 @@ public:
         this->loadModel(path);
         this->radius = radius;
     }
-    
+
     // Draws the model, and thus all its meshes
     void Draw(Shader shader, FrustumG frustum, GLfloat x, GLfloat y, GLfloat z)
     {
@@ -42,7 +42,7 @@ public:
                 this->meshes[i].Draw(shader);
         }
     }
-    
+
 private:
     /*  Model Data  */
     vector<Mesh> meshes;
@@ -66,11 +66,11 @@ private:
         }
         // Retrieve the directory path of the filepath
         this->directory = path.substr(0, path.find_last_of('/'));
-        
+
         // Process ASSIMP's root node recursively
         this->processNode(scene->mRootNode, scene);
     }
-    
+
     // Processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode* node, const aiScene* scene)
     {
@@ -87,16 +87,16 @@ private:
         {
             this->processNode(node->mChildren[i], scene);
         }
-        
+
     }
-    
+
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         // Data to fill
         vector<Vertex> vertices;
         vector<GLuint> indices;
         vector<Texture> textures;
-        
+
         // Walk through each of the mesh's vertices
         for(GLuint i = 0; i < mesh->mNumVertices; i++)
         {
@@ -144,7 +144,7 @@ private:
             // Diffuse: texture_diffuseN
             // Specular: texture_specularN
             // Normal: texture_normalN
-            
+
             // 1. Diffuse maps
             vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
@@ -152,11 +152,11 @@ private:
             vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
         }
-        
+
         // Return a mesh object created from the extracted mesh data
         return Mesh(vertices, indices, textures);
     }
-    
+
     // Checks all material textures of a given type and loads the textures if they're not loaded yet.
     // The required info is returned as a Texture struct.
     vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName)
@@ -197,26 +197,31 @@ private:
 GLint TextureFromFile(const char* path, string directory)
 {
     //Generate texture ID and load texture data
-    
+
     string filename = string(path);
     filename = directory + '/' + filename;
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width,height;
     std::cout << filename.c_str() << std::endl;
-    unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = LoadImageRGB(filename.c_str(), &width, &height);
     std::cout <<  "Done " << std::endl;
+    if (!image)
+    {
+        std::cerr << "ERROR::TEXTURE::FAILED_TO_LOAD " << filename << std::endl;
+        return 0;
+    }
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
-    
+
     // Parameters
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
-    SOIL_free_image_data(image);
+    FreeImage(image);
     return textureID;
 }

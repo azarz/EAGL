@@ -1,4 +1,5 @@
-#version 330 core
+#version 300 es
+precision highp float;
 
 in vec2 TexCoords;
 in vec3 Normal;
@@ -17,7 +18,7 @@ uniform vec3 lampPos;
 uniform vec3 lampColor;
 
 void main()
-{    
+{
 
     // Ambient
     vec3 ambient = ambientStrength * lightColor;
@@ -34,8 +35,8 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm );
     vec3 reflectLamp = reflect(-lampDir, norm );
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0) , 32);
-    float specLamp = pow(max(dot(viewDir, reflectLamp), 0.0) , 32);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0) , 32.0);
+    float specLamp = pow(max(dot(viewDir, reflectLamp), 0.0) , 32.0);
     vec3 specular = specularStrength * spec * lightColor + specularStrength * specLamp * lampColor ;
 
     vec3 result = (ambient + diffuse + specular);
@@ -43,5 +44,5 @@ void main()
     color = texture(maTexture, TexCoords);
     color *= vec4(result, 1.0f);
 
-    
+
 }

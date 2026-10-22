@@ -4,9 +4,12 @@
 #include <ctime>
 #include <iostream>
 #include <map>
+#include <functional>
+#include <algorithm>
+#include <cstdlib>
 
 // GLEW
-#include <GL/glew.h>
+#include "GLCompat.h"
 
 // GLFW
 #include <GLFW/glfw3.h>
@@ -25,7 +28,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 // Other Libs
-#include <SOIL/SOIL.h>
+#include "ImageLoader.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
 
 
 // ------------------------- PARAMETRES DU PROGRAMME -------------------------------------------------------------------------
@@ -84,29 +92,65 @@ enum Type_Ilot{
 };
 
 
-
-int main()
+#ifdef __EMSCRIPTEN__
+EM_BOOL resize_callback(int, const EmscriptenUiEvent* event, void* userData)
 {
+    GLFWwindow* window = static_cast<GLFWwindow*>(userData);
+    glfwSetWindowSize(window, event->windowInnerWidth, event->windowInnerHeight);
+    return EM_TRUE;
+}
+#endif
+
+int main(int argc, char** argv)
+{
+    if (argc > 1) DUREE_CYCLE = std::atoi(argv[1]);
+    if (argc > 2) nbIlots = std::atoi(argv[2]);
+    if (argc > 3) car_speed = (GLfloat)std::atof(argv[3]);
+    if (argc > 4) nbVoitures = std::atoi(argv[4]);
+
+    DUREE_CYCLE = std::max(1, std::min(86400, DUREE_CYCLE));
+    nbIlots = std::max(2, std::min(50, nbIlots));
+    car_speed = std::max(0.0f, std::min(30.0f, car_speed));
+    nbVoitures = std::max(0, std::min(nbIlots, nbVoitures));
+
     // Init GLFW
     glfwInit();
+#ifdef __EMSCRIPTEN__
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+#else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "EAGL", nullptr, nullptr); // Windowed
+#endif
+
+    static GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "EAGL", nullptr, nullptr); // Windowed
     glfwMakeContextCurrent(window);
-   
+#ifdef __EMSCRIPTEN__
+    double canvasWidth, canvasHeight;
+    if (emscripten_get_element_css_size("#canvas", &canvasWidth, &canvasHeight) == EMSCRIPTEN_RESULT_SUCCESS){
+        glfwSetWindowSize(window, (int)canvasWidth, (int)canvasHeight);
+    }
+#endif
+
+#ifndef __EMSCRIPTEN__
     glewExperimental = GL_TRUE;
     glewInit();
-    
+#endif
+
     // Define the viewport dimensions
-    int width, height;
+    static int width, height;
     // On recupere les dimensions de la fenetre creee plus haut
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
-    
+#ifdef __EMSCRIPTEN__
+    emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, window, EM_FALSE, resize_callback);
+#endif
+
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);     //Enabling VSync to save ressources
 
@@ -117,36 +161,36 @@ int main()
     glCullFace(GL_BACK);
 
 
-    Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
+    static Shader shader("shaders/default.vertexshader", "shaders/default.fragmentshader");
 
-    GLuint texture; // Declaration de l'identifiant
+    static GLuint texture; // Declaration de l'identifiant
 
 	glGenTextures(1, &texture); // Generation de la texture
 	// On bind la texture cree dans le contexte global d'OpenGL
-	glBindTexture(GL_TEXTURE_2D, texture); 
+	glBindTexture(GL_TEXTURE_2D, texture);
 	// Modification des parametres de la texture
 	// Methode de wrapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	// Methode de filtrage
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Chargement du fichier image en utilisant la lib SOIL
 	int twidth, theight;
-    unsigned char* data = SOIL_load_image("texture/wall.jpg", &twidth, &theight,
-					                            0, SOIL_LOAD_RGB);
+    unsigned char* data = LoadImageRGB("texture/wall.jpg", &twidth, &theight);
 	// Association des donnees image a la texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, twidth, theight, 
-					           0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    if (data){
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, twidth, theight,
+                     0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        FreeImage(data);
+    }
 	// Generation de la mipmap
 	glGenerateMipmap(GL_TEXTURE_2D);
-	// On libere la memoire
-	SOIL_free_image_data(data);
 	// On unbind la texture
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	
-    GLint nbTriangles;
+
+    static GLint nbTriangles;
 
     //Définition du sol, carré allant de -500, -500 à 500, 500
     GLfloat vertices[] = {
@@ -162,17 +206,17 @@ int main()
         1, 3, 2,
     };
 
-    nbTriangles = sizeof(indices)/3;
+    nbTriangles = sizeof(indices)/(3*sizeof(indices[0]));
 
-    GLuint VBO, VAO, EBO;
-    
+    static GLuint VBO, VAO, EBO;
+
     glGenVertexArrays(1, &VAO);
-    
+
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-    
+
     glBindVertexArray(VAO);
-    
+
     // On met notre EBO dans le contexte global
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     // On assigne au EBO le tableau d'indices
@@ -190,48 +234,50 @@ int main()
     // Attribut des coordonnées UV
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6*sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-	
-    Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
+
+    static Camera camera(glm::vec3(0.0f, 1.0f, 0.0f), window);
 
 
     //On initialise notre frustum (cône) (classe FrustumG du tutoriel du site lighthouse3D) pour réaliser du view frustum culling,
     //C'est à dire que l'on évite de faire le rendu des objets qui ne sont pas à l'écran. Cela améliore grandement la performance.
-    FrustumG frustum;
+    static FrustumG frustum;
     frustum.setCamInternals(60.0f, (float)screenWidth/(float)screenHeight, 0.1f, 350.0f);
 
 
     // On charge les modèles, avec le rayon de la sphère à tester pour le frustum culling
     // Si cette sphère est dans le cône de vison ou l'intersecte, on dessine l'objet
-    Model maison("model/House/house.obj", 7.5f);
-    Model soleil("model/Sun/soleil.obj", 350.0f);
-    Model lamp("model/Lamp/Lamp.obj", 3.0f);
-    Model lit_lamp("model/Lamp/litLamp/Lamp.obj", 3.0f);
-    Model arbre1("model/Trees/Tree1/Tree1.3ds", 4.0f);
-    Model arbre2("model/Trees/Tree2/Tree2.3ds", 9.0f);
-    Model cloud("model/Cloud/nuage2.obj", 6.0f);
-    Model shuttle("model/Shuttle/tyderium.obj", 40.0f);
-    Model car("model/Car/car.obj", 2.0f);
-    Model croutitower("model/Croutitower/croutitower.obj", 45.0f);
-    Model grass("model/Grass/jardin4.obj", 25.0f);
-    Model road("model/Road/route3.obj",22.0f);
-    Model road2("model/Road/route3-2.obj",20.0f);
-    Model magnesie("model/Warehouse/entrepot.obj", 17.0f);
-    Model banc("model/Bench/banc.obj", 2.0f);
+    static Model maison("model/House/house.obj", 7.5f);
+    static Model soleil("model/Sun/soleil.obj", 350.0f);
+    static Model lamp("model/Lamp/Lamp.obj", 3.0f);
+    static Model lit_lamp("model/Lamp/litLamp/Lamp.obj", 3.0f);
+    static Model arbre1("model/Trees/Tree1/Tree1.3ds", 4.0f);
+    static Model arbre2("model/Trees/Tree2/Tree2.3ds", 9.0f);
+    static Model cloud("model/Cloud/nuage2.obj", 6.0f);
+    static Model shuttle("model/Shuttle/tyderium.obj", 40.0f);
+    static Model car("model/Car/car.obj", 2.0f);
+    static Model croutitower("model/Croutitower/croutitower.obj", 45.0f);
+    static Model grass("model/Grass/jardin4.obj", 25.0f);
+    static Model road("model/Road/route3.obj",22.0f);
+    static Model road2("model/Road/route3-2.obj",20.0f);
+    static Model magnesie("model/Warehouse/entrepot.obj", 17.0f);
+    static Model banc("model/Bench/banc.obj", 2.0f);
 
 
 
     //Initialisation des nuages
-    GLfloat vitesseNuages;
-    GLint nbNuages;
+    static GLfloat vitesseNuages;
+    static GLint nbNuages;
     srand(std::time(NULL)); //Initialise la seed de manière différente à chaque lancement du programme
     vitesseNuages = rand()%51/5; //Vitesse des nuages, entre 0 et 10 écrans/s
     nbNuages = rand()%701; //Nombre de nuages, entre 0 et 700
 
-    GLfloat xNua[nbNuages];
-    GLfloat zNua[nbNuages];
+    static std::vector<GLfloat> xNua;
+    static std::vector<GLfloat> zNua;
+    xNua.resize(nbNuages);
+    zNua.resize(nbNuages);
 
     //Positions initiales des nuages
     for(int i(0); i < nbNuages; i++){
@@ -243,12 +289,12 @@ int main()
 
 
     //Initialisation des ilots urbains (patés de maisons):
-    GLfloat xIlot[nbIlots];
-    GLfloat zIlot[nbIlots];
-    Type_Ilot typeIlot[nbIlots];
+    static std::vector<GLfloat> xIlot(nbIlots);
+    static std::vector<GLfloat> zIlot(nbIlots);
+    static std::vector<Type_Ilot> typeIlot(nbIlots);
     GLint intervalle(34);       //intervalle entre 2 centres d'îlots
-    int emplacement_tour(0);
-    int emplacement_entrepot(0);
+    static int emplacement_tour(0);
+    static int emplacement_entrepot(0);
 
     //Pour sécurité : on peut rentrer un nombre d'ilots nul
     if (nbIlots == 0){
@@ -364,26 +410,30 @@ int main()
 
     //Initialisation des voitures
     //Position des voitures
-    glm::vec3 carPos[nbVoitures];
+    static std::vector<glm::vec3> carPos(nbVoitures);
     for(int i(0); i<nbVoitures; i++){
         carPos[i] = glm::vec3(xIlot[i] + 17.0f, 0.4f, zIlot[i] + 13.0f);
     }
     //Vecteur pointant vers l'avant de la voiture
-    glm::vec3 carFront[nbVoitures];
+    static std::vector<glm::vec3> carFront(nbVoitures);
     for(int i(0); i<nbVoitures; i++){
         carFront[i] = glm::vec3(0.0f, 0.0f, 1.0f);
     }
 
     //Initialisation de dates et d'intervalles de temps pour le déplacement de la voiture
-    GLfloat deltaT(0);
-    GLfloat lastT;
+    static GLfloat deltaT(0);
+    static GLfloat lastT;
     lastT = glfwGetTime();
 
 
 
 
     // Boucle principale
+#ifdef __EMSCRIPTEN__
+    static std::function<void()> renderFrame = [&]() {
+#else
     while(!glfwWindowShouldClose(window))
+#endif
     {
         glfwPollEvents();
         camera.Do_Movement();
@@ -395,22 +445,29 @@ int main()
                           Vec3(camera.Position.x + camera.Front.x ,camera.Position.y + camera.Front.y ,camera.Position.z + camera.Front.z),
                           Vec3(camera.Up.x, camera.Up.y, camera.Up.z));
 
+        shader.Use();
+
         //Récupération de la position de la vue, pour la lumière spéculaire
         glUniform3f(glGetUniformLocation(shader.Program, "viewPos"), camera.Position.x, camera.Position.y, camera.Position.z);
-        
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.Use();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // On récupère les identifiants des variables globales du shader
         GLint modelLoc = glGetUniformLocation(shader.Program, "model");
 
-        glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 350.0f);
+        glfwGetFramebufferSize(window, &width, &height);
+        if (width > 0 && height > 0){
+            screenWidth = width;
+            screenHeight = height;
+            glViewport(0, 0, width, height);
+            frustum.setCamInternals(60.0f, (float)width/(float)height, 0.1f, 350.0f);
+        }
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)screenWidth/(float)screenHeight, 0.1f, 350.0f);
         glm::mat4 view = camera.GetViewMatrix();
 
-        
+
         glm::mat4 model;
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));	
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 		//  Activiation  de la  texture 0
@@ -499,7 +556,7 @@ int main()
         glUniform3f(lightColor, lColor.x, lColor.y , lColor.z);
         glUniform1f(ambientStrength, ambStr);
         glUniform1f(specularStrength, specStr);
-		
+
         // On met a jour les variables globales du shader
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -1081,12 +1138,18 @@ int main()
         glBindVertexArray(0);
         glfwSwapBuffers(window);
     }
-    
+#ifdef __EMSCRIPTEN__
+    };
+    emscripten_set_main_loop_arg([](void* callback) {
+        (*static_cast<std::function<void()>*>(callback))();
+    }, &renderFrame, 0, 1);
+#else
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
-    
+
     glfwTerminate();
+#endif
     return 0;
 }
 

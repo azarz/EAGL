@@ -3,7 +3,7 @@
  View Frustum - Lighthouse3D
 
  Class used for the frustum culling
- 
+
   -----------------------------------------------------*/
 
 
@@ -24,7 +24,7 @@ class Plane;
 
 
 
-class FrustumG 
+class FrustumG
 {
 private:
 
@@ -57,10 +57,12 @@ public:
         int pointInFrustum(Vec3 &p);
         int sphereInFrustum(Vec3 p, float raio);
 
-        void drawPoints();
-        void drawLines();
-        void drawPlanes();
-        void drawNormals();
+	#ifndef __EMSCRIPTEN__
+		void drawPoints();
+		void drawLines();
+		void drawPlanes();
+		void drawNormals();
+	#endif
 };
 
 

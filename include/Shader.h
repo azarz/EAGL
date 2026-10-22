@@ -5,8 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-  
-#include <GL/glew.h> // Include glew to get all the required OpenGL headers
+
+#include "GLCompat.h"
 
 class Shader
 {
@@ -18,6 +18,6 @@ public:
   	// Use the program
   	void Use();
 };
-  
+
 #endif
 

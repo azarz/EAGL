@@ -4,7 +4,7 @@
 #include <vector>
 
 // GL Includes
-#include <GL/glew.h>
+#include "GLCompat.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -14,6 +14,7 @@
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -82,7 +83,11 @@ public:
 
         glfwSetKeyCallback(window, key_callback);
         glfwSetCursorPosCallback(window, mouse_callback);
+#ifdef __EMSCRIPTEN__
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+#else
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+#endif
 
     }
 
@@ -201,7 +206,7 @@ public:
 
             this->Yaw = 45 + 5*currentFrame;
             this->Pitch = 0.0f + 10*cos(currentFrame/5);
-		
+
             this->updateCameraVectors();
         }
 
@@ -267,9 +272,16 @@ private:
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
     std::cout << key << std::endl;
-    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+#ifdef __EMSCRIPTEN__
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        firstMouse = true;
+        mouse_on = false;
+#else
         glfwSetWindowShouldClose(window, GL_TRUE);
-    
+#endif
+    }
+
     if(action == GLFW_PRESS)
         keys[key] = true;
     else if(action == GLFW_RELEASE)
@@ -285,14 +297,26 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
         lastY = ypos;
         firstMouse = false;
     }
-    
+
     xoffset = xpos - lastX;
     yoffset = lastY - ypos;
-    
+
     lastX = xpos;
     lastY = ypos;
 
-    mouse_on=true;	
-    
+    mouse_on=true;
+
     //this->ProcessMouseMovement(xoffset, yoffset);
+}
+
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+#ifdef __EMSCRIPTEN__
+    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+        firstMouse = true;
+        mouse_on = false;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+#endif
 }

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EAGL</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            color: #e8e6dc;
+            background: radial-gradient(ellipse at 50% -10%, #294047 0%, #151d21 58%, #101518 100%);
+            font-family: "Avenir Next", "Segoe UI", sans-serif;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #launch-menu {
+            min-height: 100%;
+            height: 100%;
+            overflow-y: auto;
+            display: grid;
+            place-items: center;
+            padding: 24px 16px;
+        }
+
+        #launch-menu[hidden], canvas[hidden] {
+            display: none;
+        }
+
+        .launch-panel {
+            width: min(100%, 440px);
+            padding: 30px;
+            border: 1px solid #58716f;
+            border-radius: 6px;
+            background: rgba(15, 23, 26, 0.94);
+            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand {
+            margin: 0 0 6px;
+            color: #9dc4b3;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0 0 24px;
+            color: #f0eee5;
+            font-family: Georgia, serif;
+            font-size: 32px;
+            font-weight: 500;
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px 14px;
+        }
+
+        label {
+            display: grid;
+            gap: 6px;
+            color: #c3cbc4;
+            font-size: 14px;
+        }
+
+        .field-note {
+            color: #98a8a0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .number-field {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+        }
+
+        input {
+            width: 100%;
+            min-width: 0;
+            height: 42px;
+            padding: 0 11px;
+            border: 1px solid #71827c;
+            border-radius: 3px;
+            color: #18211e;
+            background: #f0eee5;
+            font: inherit;
+            font-size: 16px;
+        }
+
+        input:focus-visible, button:focus-visible {
+            outline: 2px solid #e59c6d;
+            outline-offset: 2px;
+        }
+
+        .unit {
+            color: #9ca9a2;
+            font-size: 13px;
+        }
+
+        button {
+            width: 100%;
+            min-height: 46px;
+            margin-top: 24px;
+            border: 0;
+            border-radius: 3px;
+            color: #17211e;
+            background: #9dc4b3;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #b4d5c7;
+        }
+
+        @media (max-width: 420px) {
+            .launch-panel {
+                padding: 24px 20px;
+            }
+
+            .fields {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()" hidden></canvas>
+    <main id="launch-menu">
+        <section class="launch-panel" aria-labelledby="launch-title">
+            <p class="brand">Simulation urbaine</p>
+            <h1 id="launch-title">EAGL</h1>
+            <form id="launch-form">
+                <div class="fields">
+                    <label for="cycle">Cycle jour / nuit
+                        <small class="field-note">240 s par défaut : 2 min de jour et 2 min de nuit.</small>
+                        <span class="number-field"><input id="cycle" name="cycle" type="number" min="1" max="86400" step="1" value="240" required><span class="unit">s</span></span>
+                    </label>
+                    <label for="islands">Îlots urbains
+                        <small class="field-note">4 par défaut. Pour un carré sans trous, choisir le carré d’un nombre pair (4, 16, 36). Au-delà de 40 à 50, la génération est gourmande.</small>
+                        <span class="number-field"><input id="islands" name="islands" type="number" min="2" max="50" step="1" value="4" required></span>
+                    </label>
+                    <label for="car-speed">Vitesse des voitures
+                        <small class="field-note">6 par défaut.</small>
+                        <span class="number-field"><input id="car-speed" name="car-speed" type="number" min="0" max="30" step="0.1" value="6" required></span>
+                    </label>
+                    <label for="cars">Voitures
+                        <small class="field-note">6 par défaut, limité au nombre d’îlots.</small>
+                        <span class="number-field"><input id="cars" name="cars" type="number" min="0" max="4" step="1" value="4" required></span>
+                    </label>
+                </div>
+                <button type="submit">Lancer la simulation</button>
+            </form>
+        </section>
+    </main>
+    <script>
+        const launchParameters = new URLSearchParams(window.location.search);
+        const launchRequested = launchParameters.get("run") === "1";
+        const canvas = document.getElementById("canvas");
+        const launchMenu = document.getElementById("launch-menu");
+        const launchForm = document.getElementById("launch-form");
+        const islandsInput = document.getElementById("islands");
+        const carsInput = document.getElementById("cars");
+
+        canvas.hidden = !launchRequested;
+        launchMenu.hidden = launchRequested;
+
+        function syncCarLimit() {
+            const islandCount = Number(islandsInput.value) || 1;
+            carsInput.max = String(islandCount);
+            carsInput.value = String(Math.min(Number(carsInput.value) || 0, islandCount));
+        }
+
+        islandsInput.addEventListener("input", syncCarLimit);
+        syncCarLimit();
+
+        launchForm.addEventListener("submit", event => {
+            event.preventDefault();
+            if (!launchForm.reportValidity()) return;
+
+            const formData = new FormData(launchForm);
+            const url = new URL(window.location.href);
+            url.searchParams.set("run", "1");
+            url.searchParams.set("cycle", formData.get("cycle"));
+            url.searchParams.set("islands", formData.get("islands"));
+            url.searchParams.set("car-speed", formData.get("car-speed"));
+            url.searchParams.set("cars", formData.get("cars"));
+            window.location.assign(url.toString());
+        });
+
+        var Module = {
+            canvas: canvas,
+            noInitialRun: !launchRequested,
+            arguments: launchRequested ? [
+                launchParameters.get("cycle") || "240",
+                launchParameters.get("islands") || "4",
+                launchParameters.get("car-speed") || "6",
+                launchParameters.get("cars") || "4"
+            ] : []
+        };
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

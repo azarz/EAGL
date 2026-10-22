@@ -7,7 +7,7 @@
 #include "FrustumG.h"
 #include <math.h>
 
-#include <GL/glew.h>
+#include "GLCompat.h"
 
 // GLM Mathemtics
 #include <glm/glm.hpp>
@@ -31,7 +31,7 @@ void FrustumG::setCamInternals(float angle, float ratio, float nearD, float farD
 
 	tang = (float)tan(angle* ANG2RAD * 0.5) ;
 	nh = nearD * tang;
-	nw = nh * ratio; 
+	nw = nh * ratio;
 	fh = farD  * tang;
 	fw = fh * ratio;
 
@@ -105,6 +105,7 @@ int FrustumG::sphereInFrustum(Vec3 p, float raio) {
 
 
 
+#ifndef __EMSCRIPTEN__
 void FrustumG::drawPoints() {
 
 
@@ -245,19 +246,19 @@ void FrustumG::drawNormals() {
 		b = a + pl[LEFT].normal;
 		glVertex3f(a.x,a.y,a.z);
 		glVertex3f(b.x,b.y,b.z);
-		
+
 		// right
 		a = (ftr + nbr + fbr + ntr) * 0.25;
 		b = a + pl[RIGHT].normal;
 		glVertex3f(a.x,a.y,a.z);
 		glVertex3f(b.x,b.y,b.z);
-		
+
 		// top
 		a = (ftr + ftl + ntr + ntl) * 0.25;
 		b = a + pl[TOP].normal;
 		glVertex3f(a.x,a.y,a.z);
 		glVertex3f(b.x,b.y,b.z);
-		
+
 		// bottom
 		a = (fbr + fbl + nbr + nbl) * 0.25;
 		b = a + pl[BOTTOM].normal;
@@ -268,3 +269,4 @@ void FrustumG::drawNormals() {
 
 
 }
+#endif
